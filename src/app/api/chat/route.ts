@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { answerQuestion } from "@/lib/ai/answer-question";
-import { generateParliamentAnswer, ChatServiceError } from "@/lib/ai/parliament-chat";
+import { generateParliamentAnswer, understandQuestion, ChatServiceError } from "@/lib/ai/parliament-chat";
 import { admitChatRequest, allowModelCall, cachedAnswer, storeAnswer } from "@/lib/ai/rate-limit";
 import { MAX_BODY_BYTES, MAX_QUESTION_CHARS, parseChatRequest } from "@/lib/ai/validate-request";
 import type { ValidationReport } from "@/lib/ai/validate-answer";
@@ -54,18 +54,29 @@ export async function POST(req: NextRequest) {
 
     const report: ValidationReport = { dropped: [] };
     let modelUsed = false;
+    let understood = false;
     const answer = await Promise.race([
-      answerQuestion(request, parliamentData, async (input) => {
-        if (!allowModelCall()) throw new ChatServiceError(503, "Өнөөдрийн AI тайлбарын хязгаарт хүрлээ. Маргааш дахин оролдоно уу.");
-        modelUsed = true;
-        return generateParliamentAnswer(input, `${ip}|${client}`);
-      }, report),
+      answerQuestion(
+        request,
+        parliamentData,
+        async (input) => {
+          if (!allowModelCall()) throw new ChatServiceError(503, "Өнөөдрийн AI тайлбарын хязгаарт хүрлээ. Маргааш дахин оролдоно уу.");
+          modelUsed = true;
+          return generateParliamentAnswer(input, `${ip}|${client}`);
+        },
+        report,
+        async (input) => {
+          if (!allowModelCall()) return null; // skip understanding rather than fail the request
+          understood = true;
+          return understandQuestion(input, `${ip}|${client}`);
+        },
+      ),
       new Promise<never>((_, reject) => setTimeout(() => reject(new ChatServiceError(504, "Хариулт хэт удаж байна. Дахин оролдоно уу.")), REQUEST_TIMEOUT_MS)),
     ]);
 
     // Operational log: no question text, no secrets.
     console.info(
-      `[ask-parliament] status=${answer.status} mode=${answer.mode} model=${modelUsed} citations=${answer.citations.length} ` +
+      `[ask-parliament] status=${answer.status} mode=${answer.mode} understand=${understood} model=${modelUsed} help=${!!answer.help} citations=${answer.citations.length} ` +
         `dropped=${report.dropped.map((d) => d.reason).join(",") || "0"} ms=${Date.now() - started}`,
     );
     if (useCache && answer.status !== "clarify") storeAnswer(cacheKey, answer);

@@ -6,6 +6,13 @@
 export const PARLIAMENT_SITE = (process.env.NEXT_PUBLIC_PARLIAMENT_SITE_URL || "https://new.parliament.mn").replace(/\/$/, "");
 export const LAWFORUM_SITE = (process.env.NEXT_PUBLIC_LAWFORUM_SITE_URL || "https://lawforum.parliament.mn").replace(/\/$/, "");
 
+/** Routes inside this app. */
+export const appUrl = {
+  home: () => "/",
+  /** Bill page with official record, journey and Ask Parliament AI context (id = LawForum id). */
+  bill: (id: number) => `/laws/${id}`,
+};
+
 export const officialUrl = {
   home: () => `${PARLIAMENT_SITE}/`,
   member: (id: number) => `${PARLIAMENT_SITE}/member/${id}`,

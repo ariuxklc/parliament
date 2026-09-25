@@ -1,4 +1,4 @@
-import { topicTokens } from "../parliament/text.ts";
+import { questionLanguage, topicTokens } from "../parliament/text.ts";
 
 /**
  * Deterministic question analysis (no model call). It chooses which official sources to query;
@@ -13,6 +13,7 @@ export type Intent =
   | "member" // a named MP
   | "committee" // a standing committee
   | "session" // sessions / sittings
+  | "legal" // a personal situation or "what does the law say" question — legal information, never advice
   | "general";
 
 export type QuestionPlan = {
@@ -37,6 +38,14 @@ export type QuestionPlan = {
   injection: boolean;
   /** Asks for a political recommendation, which the assistant does not give. */
   opinion: boolean;
+  /** Describes a personal legal situation ("баригдчихлаа, яах вэ?"): answer with legal information + official pointers. */
+  legal: boolean;
+  /** Dictionary-form search words from question understanding (empty when not used). */
+  searchTerms: string[];
+  /** Law names suggested by question understanding. Hints only — validated against official titles before use. */
+  lawNames: string[];
+  /** The user wrote in English: fixed server text (pointers, refusals) is given in English. */
+  english: boolean;
 };
 
 const VOTE = /санал\s*хураа|санал\s*өгс|санал\s*өгөв|хэдэн\s*гишүүн\s*(?:дэмж|эсэргүүц|татгалз)|хэн\s*дэмж|дэмжсэн|эсэргүүцсэн|зөвшөөрсөн|татгалзсан|\bvot(?:e|ed|ing)\b/iu;
@@ -51,7 +60,9 @@ const BILL_WORD = /төс[өө]л|төсл|хууль|хуулий|тогтоо�
 const DEICTIC = /(?:^|\s)(?:энэ|тэр|уг|тус|дээрх|мөн|үүн|түүн)(?:\s|$|ий|ийг|ийн|тэй|д)|\bthis\b|\bthat\b|\bit\b/iu;
 const RECENT = /сүүлийн|хамгийн\s*сүүл|сүүлд|одоо|шинээр|\blatest\b|\brecent/iu;
 const INJECTION = /ignore\s+(?:all|any|previous|prior|the)|disregard\s+(?:all|previous)|system\s*prompt|developer\s*message|api[_\s-]?key|password|нууц\s*үг|token|\.env|credential|өмнөх\s*заавр|зааврыг\s*(?:үл|бүү|мартаж)|reveal\s+your|jailbreak/iu;
-const OPINION = /дэмжих\s*ёстой|эсэргүүцэх\s*ёстой|санал\s*өгөх\s*ёстой|сонгох\s*ёстой|сайн\s*уу\s*муу|аль\s*нь\s*дээр|хэнийг\s*сонго|аль\s*нам\s*(?:дээр|зөв)|should\s+i\s+(?:support|vote)|who\s+should/iu;
+// Personal situations and "what happens to me" questions. Includes common misspellings (баривд- for баригд-).
+const LEGAL = /яах\s*(?:вэ|уу|ёстой)|яана\s*(?:вэ|уу)|яадаг|юу\s*хийх\s*(?:вэ|ёстой)|торгууль|торгуул|шийтгэл|баригд|баривд|цагдаа|гомдол\s*гаргах|миний\s*эрх|эрх\s*минь|хариуцлага\s*хүлээх|хууль\s*зөрчсөн\s*үү|what\s+should\s+i\s+do|am\s+i\s+allowed|fined/iu;
+const OPINION =/дэмжих\s*ёстой|эсэргүүцэх\s*ёстой|санал\s*өгөх\s*ёстой|сонгох\s*ёстой|сайн\s*уу\s*муу|аль\s*нь\s*дээр|хэнийг\s*сонго|аль\s*нам\s*(?:дээр|зөв)|should\s+i\s+(?:support|vote)|who\s+should/iu;
 
 const NAME_WITH_INITIAL = /([А-ЯӨҮЁ])\.\s?([А-ЯӨҮЁ][а-яөүё]{2,})/gu;
 const CAPITALIZED = /(?<![\p{L}.])([А-ЯӨҮЁ][а-яөүё]{3,})/gu;
@@ -81,6 +92,8 @@ export function analyzeQuestion(question: string): QuestionPlan {
     else if (EXPLAIN.test(q) || BILL_WORD.test(q)) intent = "bill-explain";
     else if (SESSION.test(q)) intent = "session";
   }
+  const legal = LEGAL.test(q);
+  if (legal && intent === "general") intent = "legal";
 
   const drafting = /санал\s*авч\s*буй|боловсруулж\s*буй|олон\s*нийтийн\s*саналд/iu.test(q);
   const submitted = /өргөн\s*мэдүүлсэн\s*төслүүд|өргөн\s*мэдүүлэгдсэн\s*төслүүд/iu.test(q);
@@ -104,5 +117,9 @@ export function analyzeQuestion(question: string): QuestionPlan {
     names,
     injection: INJECTION.test(q),
     opinion: OPINION.test(q),
+    legal,
+    searchTerms: [],
+    lawNames: [],
+    english: questionLanguage(q) === "en",
   };
 }

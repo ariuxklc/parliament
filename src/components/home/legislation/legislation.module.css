@@ -630,13 +630,37 @@
 .updated {
   color: var(--blue-800);
 }
-.cardArrow {
+/* secondary official-source link sits above the stretched card link */
+.sourceMini {
+  position: relative;
+  z-index: 1;
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-600);
+  background: var(--surface);
+  transition:
+    color var(--dur-2),
+    border-color var(--dur-2);
+}
+.sourceMini:hover,
+.sourceMini:focus-visible {
+  color: var(--blue-800);
+  border-color: var(--blue-800);
+}
+.cardArrow {
   color: var(--blue-800);
   transition: transform var(--dur-2) var(--ease-out);
 }
 .card:hover .cardArrow {
-  transform: translate(3px, -3px);
+  transform: translateX(3px);
 }
 
 .more {

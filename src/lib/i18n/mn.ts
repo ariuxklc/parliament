@@ -22,6 +22,7 @@ export const mn = {
   sections: {
     now: "Одоо",
     laws: "Хуулийн төсөл",
+    petitions: "Өргөдөл",
     members: "Гишүүд",
     stats: "Тоон мэдээлэл",
     news: "Мэдээ",
@@ -103,6 +104,8 @@ export const mn = {
     loading: "Ачаалж байна…",
     source: "Эх сурвалж: LawForum API (lawforum.parliament.mn)",
     openOnLawforum: "LawForum-д үзэх",
+    openBill: "Төслийн дэлгэрэнгүй, асуулт асуух",
+    lawforumShort: "LawForum",
     projectNumber: "Дугаар",
     agendaTitle: "Нэгдсэн хуралдаанаар хэлэлцсэн асуудал",
     agendaSource: "Эх сурвалж: УИХ-ын хуралдааны систем (Parliament API)",

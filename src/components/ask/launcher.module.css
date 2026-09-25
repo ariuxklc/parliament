@@ -23,6 +23,32 @@
   outline: 3px solid var(--gold-300);
   outline-offset: 3px;
 }
+.fabText {
+  display: block;
+  max-width: 200px;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: max-width 0.2s ease, opacity 0.2s ease;
+}
+/* Compact: just the round mark; the label stays in the accessibility tree and expands on hover/focus. */
+.fab[data-compact="true"] {
+  gap: 0;
+  padding: 8px;
+}
+.fab[data-compact="true"] .fabText {
+  max-width: 0;
+  opacity: 0;
+}
+.fab[data-compact="true"]:hover,
+.fab[data-compact="true"]:focus-visible {
+  gap: 10px;
+  padding: 10px 18px 10px 10px;
+}
+.fab[data-compact="true"]:hover .fabText,
+.fab[data-compact="true"]:focus-visible .fabText {
+  max-width: 200px;
+  opacity: 1;
+}
 .fab strong {
   display: block;
   font-size: 15px;

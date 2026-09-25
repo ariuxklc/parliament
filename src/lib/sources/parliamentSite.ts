@@ -1,6 +1,6 @@
 import "server-only";
 import { serverEnv } from "../env";
-import { fetchJson } from "../http";
+import { fetchJson, fetchText } from "../http";
 
 /**
  * Public JSON API behind new.parliament.mn (the official site's own SPA backend, no auth).
@@ -100,6 +100,14 @@ export interface RawPoll {
 }
 interface RawPollPage { count: number; results: RawPoll[] }
 
+export interface RawUnit {
+  id: number;
+  name: string;
+  unit_type: string;
+  icon: string | null;
+  display_order: number;
+}
+
 export interface RawMenuItem {
   id: number; label: string; link_type: string; external_url: string | null; linked_news_slug: string | null; target: string;
   sub?: RawMenuItem[];
@@ -125,4 +133,11 @@ export const parliamentSite = {
   billBulletin: () => fetchJson<RawBill[]>(SRC, api("bills-public/"), { revalidate: HOUR }),
   latestPolls: (pageSize: number) => fetchJson<RawPollPage>(SRC, api(`meeting/public-polls/?page_size=${pageSize}`), { revalidate: 900 }),
   headerMenu: () => fetchJson<RawMenuItem[]>(SRC, api("menu/header/"), { revalidate: 24 * HOUR }),
+  committees: () => fetchJson<RawUnit[]>(SRC, api("parliament/units/?unit_type=COMMITTEE"), { revalidate: 24 * HOUR }),
+  /**
+   * Public petitions, "most supported" order — the same HTML feed the official homepage embeds
+   * (petition.parliament.mn has no JSON API). Parsed in normalize/petitions.ts.
+   */
+  petitionsHtml: () =>
+    fetchText("petition.parliament.mn", `${serverEnv.parliamentSiteApiBaseUrl.replace(/\/api$/, "")}/petition-source/Index?pageindex=1`, { revalidate: 900, timeoutMs: 12_000 }),
 };

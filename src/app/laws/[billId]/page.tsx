@@ -12,6 +12,7 @@ import { LAWFORUM_SITE } from "@/lib/site";
 import { parliamentData } from "@/lib/parliament/data";
 import { linkBulletin } from "@/lib/ai/retrieve";
 import { stageListing } from "@/lib/ai/evidence";
+import { BillStory } from "@/components/bill/BillStory";
 
 type Params = Promise<{ billId: string }>;
 
@@ -64,6 +65,8 @@ export default async function BillPage({ params }: { params: Params }) {
           Албан ёсны эх бичвэрийг LawForum-д үзэх <ArrowUpRight size={15} />
           <span className="visually-hidden"> (шинэ цонхонд нээгдэнэ)</span>
         </a>
+
+        <BillStory bill={bill} row={row} />
 
         <div className={styles.layout}>
           <AskParliamentChat context={{ entity: { type: "bill", id: String(bill.id) }, title: bill.title, kindLabel: "Одоо үзэж буй төсөл" }} />

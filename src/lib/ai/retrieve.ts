@@ -1,10 +1,11 @@
 import type { LawForumClause, LawForumDocument } from "../parliament/lawforum-page.ts";
 import type { BillRecord, BulletinBill, MemberRecord, ParliamentData, PollRecord } from "../parliament/records.ts";
-import { expandTopics, passageHits, similar, stem, titleMatch, topicTokens } from "../parliament/text.ts";
+import { expandTopics, normalize, passageHits, similar, stem, titleMatch, topicTokens } from "../parliament/text.ts";
 import { analyzeQuestion, type QuestionPlan } from "./intent.ts";
 import * as E from "./evidence.ts";
 import { clarifyAnswer, dataAnswer, insufficientAnswer, isOfficialUrl, policyAnswer } from "./compose.ts";
-import type { ChatAnswer, ChatChoice, ChatEntity, ChatRequest, Evidence } from "./types.ts";
+import { legalHelp, officialLawNames, type Hints } from "./understand.ts";
+import type { ChatAnswer, ChatChoice, ChatEntity, ChatRequest, Evidence, LegalHelp } from "./types.ts";
 
 /**
  * Retrieval: question → official evidence (or a direct/clarifying answer).
@@ -22,8 +23,8 @@ const DAY = 86_400_000;
 type Focus = NonNullable<ChatAnswer["focus"]>;
 
 export type Retrieval =
-  | { kind: "evidence"; plan: QuestionPlan; evidence: Evidence[]; entities: ChatEntity[]; focus?: Focus; notes: string[] }
-  | { kind: "answer"; plan: QuestionPlan; answer: ChatAnswer };
+  | { kind: "evidence"; plan: QuestionPlan; evidence: Evidence[]; entities: ChatEntity[]; focus?: Focus; notes: string[]; help?: LegalHelp }
+  | { kind: "answer"; plan: QuestionPlan; answer: ChatAnswer; reason?: "policy" | "injection" | "off_topic"; help?: LegalHelp };
 
 type BillFocus = { bill?: BillRecord; row?: BulletinBill };
 
@@ -174,6 +175,46 @@ const NEED_BILL =
 
 function searchPhrase(words: string[], max = 3): string {
   return [...new Set(words.map(stem))].filter((w) => w.length >= 3).slice(0, max).join(" ");
+}
+
+/**
+ * Vote search that tolerates conversational words. The official search ANDs every word, so
+ * "мопед уна" (from "мопед унаж") found nothing although 10 votes mention mopeds. Each term is
+ * searched on its own. `topic` terms (what the user asked about) outrank `context` terms (e.g. a
+ * law name the planner suggested): a vote must mention the topic when any vote does.
+ */
+async function searchPollsByTerms(
+  data: ParliamentData,
+  topic: string[],
+  window: { from?: string; to?: string },
+  limit: number,
+  context: string[] = [],
+): Promise<PollRecord[]> {
+  const prep = (list: string[], n: number) =>
+    [...new Set(list.map((t) => (t.includes(" ") ? t : stem(t))))].filter((t) => t.length >= 4).sort((a, b) => b.length - a.length).slice(0, n);
+  const primary = prep(topic, 2);
+  const secondary = prep(context, 2).filter((s) => !primary.includes(s));
+  const all = [...primary, ...secondary];
+  if (!all.length) return [];
+  const batches = await Promise.all(all.map((s) => data.searchPolls({ search: s, ...window, limit: 10 }).catch(() => [] as PollRecord[])));
+  const scored = new Map<number, { poll: PollRecord; topicHits: number; contextHits: number }>();
+  for (const poll of batches.flat()) {
+    const text = normalize(`${poll.motion} ${poll.agendaTitle ?? ""}`);
+    const topicHits = primary.filter((s) => text.includes(normalize(s))).length;
+    const contextHits = secondary.filter((s) => text.includes(normalize(s))).length;
+    if (topicHits + contextHits) scored.set(poll.id, { poll, topicHits, contextHits });
+  }
+  let rows = [...scored.values()];
+  if (rows.some((r) => r.topicHits)) rows = rows.filter((r) => r.topicHits);
+  return rows
+    .sort((a, b) => b.topicHits - a.topicHits || b.contextHits - a.contextHits || b.poll.date.localeCompare(a.poll.date))
+    .slice(0, limit)
+    .map((r) => r.poll);
+}
+
+/** Planner search words when present, else the question's own topic words. */
+function searchTermsOf(plan: QuestionPlan): string[] {
+  return plan.searchTerms.length ? plan.searchTerms : plan.topics;
 }
 
 function yearWindow(plan: QuestionPlan): { from?: string; to?: string } {
@@ -387,16 +428,13 @@ async function voteQuestion(req: ChatRequest, plan: QuestionPlan, data: Parliame
     const start = focus.row?.submittedDate ?? focus.bill?.publishedDate;
     if (start) notBefore = new Date(Date.parse(start) - 5 * DAY).toISOString().slice(0, 10);
   } else {
-    phrase = searchPhrase(plan.topics);
+    phrase = searchPhrase(searchTermsOf(plan));
   }
   if (!phrase && !plan.recent) return answer(plan, clarifyAnswer("Аль асуудал, төслийн санал хураалтыг асууж байгаагаа тодруулна уу.", []));
 
   const window = yearWindow(plan);
   let polls: PollRecord[] = await data.searchPolls({ search: phrase, ...window, limit: 12 });
-  if (!polls.length && phrase.includes(" ")) {
-    const longest = phrase.split(" ").sort((a, b) => b.length - a.length)[0];
-    polls = await data.searchPolls({ search: longest, ...window, limit: 12 });
-  }
+  if (!polls.length && phrase.includes(" ")) polls = await searchPollsByTerms(data, phrase.split(" "), window, 12);
   if (notBefore) polls = polls.filter((p) => p.date >= notBefore!);
   const evidence = polls.slice(0, 6).map(E.pollEvidence);
   if (focus?.bill) evidence.unshift(E.billEvidence(focus.bill));
@@ -490,19 +528,17 @@ async function sessionQuestion(req: ChatRequest, plan: QuestionPlan, data: Parli
 
 /** Fallback: a small search across bills, the bulletin and votes. Returns nothing rather than weak matches. */
 async function broadSearch(req: ChatRequest, plan: QuestionPlan, data: ParliamentData): Promise<Retrieval> {
-  if (!plan.topics.length) return answer(plan, insufficientAnswer());
+  const terms = searchTermsOf(plan);
+  if (!terms.length) return answer(plan, insufficientAnswer());
   const [bills, rows] = await Promise.all([data.bills().catch(() => [] as BillRecord[]), data.bulletin().catch(() => [] as BulletinBill[])]);
-  const candidates = billCandidates(plan, bills, rows).filter((c) => c.coverage >= 0.5 || c.hits >= 2).slice(0, 3);
+  const candidates = billCandidates({ ...plan, topics: terms }, bills, rows).filter((c) => c.coverage >= 0.5 || c.hits >= 2).slice(0, 3);
   const evidence: Evidence[] = [];
   for (const c of candidates) {
     if (c.bill) evidence.push(E.billEvidence(c.bill));
     if (c.row) evidence.push(E.bulletinEvidence(c.row));
   }
-  const phrase = searchPhrase(plan.topics, 2);
-  if (phrase) {
-    const polls = await data.searchPolls({ search: phrase, ...yearWindow(plan), limit: 3 }).catch(() => [] as PollRecord[]);
-    evidence.push(...polls.map(E.pollEvidence));
-  }
+  const polls = await searchPollsByTerms(data, searchTermsOf(plan), yearWindow(plan), 3);
+  evidence.push(...polls.map(E.pollEvidence));
   if (!evidence.length) return answer(plan, insufficientAnswer());
   return result(plan, evidence, {
     entities: candidates.slice(0, 2).map(candidateEntity),
@@ -510,17 +546,80 @@ async function broadSearch(req: ChatRequest, plan: QuestionPlan, data: Parliamen
   });
 }
 
+/**
+ * A personal situation or "what does the law say" question. Parliament's own records on the topic
+ * (votes, bills) are explained as legal information; the law in force is pointed to, never paraphrased
+ * as advice. The pointer uses only law names that occur in official titles.
+ */
+async function legalQuestion(req: ChatRequest, plan: QuestionPlan, data: ParliamentData): Promise<Retrieval> {
+  const [bills, rows] = await Promise.all([data.bills().catch(() => [] as BillRecord[]), data.bulletin().catch(() => [] as BulletinBill[])]);
+  const terms = searchTermsOf(plan);
+  const polls = await searchPollsByTerms(data, terms, {}, 4, plan.lawNames.map((n) => n.replace(/\s+хууль$/iu, "")));
+  const laws = officialLawNames(plan.lawNames, [...bills.map((b) => b.title), ...rows.map((r) => r.title), ...polls.map((p) => `${p.motion} ${p.agendaTitle ?? ""}`)]);
+  const help = legalHelp(laws, terms, plan.english);
+
+  // A law's bill record is evidence only if it is also about the user's topic; otherwise it is just the pointer.
+  const topics = expandTopics(terms);
+  const lawBills = bills
+    .filter((b) => laws.some((law) => normalize(b.title).includes(normalize(law))) && (!topics.length || titleMatch(topics, b.title).hits > 0))
+    .sort((a, b) => b.publishedDate.localeCompare(a.publishedDate))
+    .slice(0, 2);
+  const evidence: Evidence[] = [...polls.map(E.pollEvidence), ...lawBills.map(E.billEvidence)];
+  const notes = [
+    "Хэрэглэгч өөрийн нөхцөл байдал эсвэл одоо мөрдөж буй хуулийн талаар асууж байна. Хувийн хууль зүйн зөвлөгөө бүү өг: «та ингэх хэрэгтэй», «танд ийм шийтгэл ногдоно» гэж бүү хэл.",
+    "Эх сурвалжид байгаа УИХ-ын санал хураалт, хуулийн төслийг л тайлбарла. Санал хураалт нь төсөл эсвэл заалтын талаарх шийдвэр бөгөөд хууль хүчин төгөлдөр болсон, хэзээнээс мөрдөгдөхийг батлахгүй — үүнийг тодорхой хэл.",
+    "Одоо мөрдөж буй хуулийг хаанаас шалгахыг сервер тусад нь харуулна; холбоос бүү бич.",
+  ];
+  if (!evidence.length) return { kind: "answer", plan, answer: insufficientAnswer(), help };
+  return { kind: "evidence", plan, evidence: bound(evidence), entities: lawBills.slice(0, 1).map((b) => ({ type: "bill" as const, id: String(b.id) })), notes, help };
+}
+
 /* --------------------------------------------------------------------- main */
 
-export async function retrieve(req: ChatRequest, data: ParliamentData): Promise<Retrieval> {
-  const plan = analyzeQuestion(req.question);
-  if (plan.opinion) return answer(plan, policyAnswer());
+/** Merge question-understanding hints into the deterministic plan. Hints steer search only. */
+function applyHints(plan: QuestionPlan, hints: Hints): QuestionPlan {
+  const intent = hints.intent === "off_topic" ? plan.intent : hints.intent === "general" ? plan.intent : hints.intent;
+  return {
+    ...plan,
+    intent,
+    legal: plan.legal || hints.intent === "legal",
+    searchTerms: hints.searchTerms,
+    lawNames: hints.lawNames,
+    deictic: plan.deictic || hints.refersToPrevious,
+    english: plan.english || !!hints.english,
+  };
+}
+
+export async function retrieve(req: ChatRequest, data: ParliamentData, hints?: Hints): Promise<Retrieval> {
+  const base = analyzeQuestion(req.question);
+  const plan = hints ? applyHints(base, hints) : base;
+  if (plan.opinion) return { kind: "answer", plan, answer: policyAnswer(), reason: "policy" };
   // An injection attempt without a (Mongolian) Parliament topic never reaches the model.
   if (plan.injection && !plan.topics.some((t) => /[Ѐ-ӿ]/u.test(t))) {
-    return answer(plan, insufficientAnswer());
+    return { kind: "answer", plan, answer: insufficientAnswer(), reason: "injection" };
+  }
+  if (hints?.intent === "off_topic" && !plan.legal) {
+    return {
+      kind: "answer",
+      plan,
+      answer: insufficientAnswer({ message: "Ask Parliament AI нь Улсын Их Хурал, хууль тогтоомжийн мэдээлэлд зориулагдсан." }),
+      reason: "off_topic",
+    };
   }
 
+  const result = await route(req, plan, data);
+  // A legal-situation question keeps its pointer whatever path answered it.
+  if (plan.legal && !result.help) {
+    const [bills, rows] = await Promise.all([data.bills().catch(() => [] as BillRecord[]), data.bulletin().catch(() => [] as BulletinBill[])]);
+    result.help = legalHelp(officialLawNames(plan.lawNames, [...bills.map((b) => b.title), ...rows.map((r) => r.title)]), searchTermsOf(plan), plan.english);
+  }
+  return result;
+}
+
+async function route(req: ChatRequest, plan: QuestionPlan, data: ParliamentData): Promise<Retrieval> {
   switch (plan.intent) {
+    case "legal":
+      return legalQuestion(req, plan, data);
     case "bill-stage":
     case "bill-explain":
       return billQuestion(req, plan, data);

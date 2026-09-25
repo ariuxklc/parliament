@@ -97,7 +97,26 @@ URL state: `/?year=2025&session=2025-fall&stage=submitted&type=1&sort=oldest&q=�
 
 ---
 
-## 5. Open items / TODO
+## 5. Bill page integration (2026-09-25)
+
+- Homepage bill cards open our bill page `/laws/{id}` (same tab); a small "LawForum ↗" link on each card keeps the official record one click away. Header logo now links to `/` on every page.
+- **Bill Journey** (`src/components/bill/BillJourney.tsx`, rules in `src/lib/normalize/journey.ts`) is rendered on `/laws/[billId]` — the only edit to the Ask Parliament AI page is its import + one `<BillJourney bill={bill} row={row} />` line.
+- Journey rules (checked against all 98 bulletin rows, 0 violations): "…явуулсан" entries = completed; the last entry without "явуулсан" = stage the bill is waiting at (never shown as completed — 10 bills sit at "Эцэслэн батлах" pending); labels that are not one of the 10 official stages ("Хэлэлцэх", "Хоёр дахь хэлэлцүүлэг", "Зөвшилцөх") are shown verbatim, not placed; earlier stages without a record are "passed" with no date; nothing beyond the furthest record is inferred. Output agrees with the chat's stage answers (same records, no extra interpretation).
+
+## 6. Citizen features added (2026-09-25)
+
+| Feature | Where | How it works |
+| --- | --- | --- |
+| **30 секундэд** summary + **Энэ танд хамаатай юу?** | bill page (top), homepage block after the hero | Drafted by the AI model (`OPENAI_MODEL`, gpt-6-luna) from the official LawForum clauses (`src/lib/summaries/generate.ts`). The server keeps only sentences that cite a given clause and whose numbers appear in it. Saved as a **draft**; shown publicly only after a person approves it on `/review`. Each sentence links to its clause. |
+| Human review | `/review` (not linked publicly; dev mode or `REVIEW_TOKEN`) | Generate → edit next to the source clauses → tick "checked against sources" + name → approve. Unpublish at any time. |
+| Video | bill page card + homepage block | Upload MP4/WebM/MOV (≤250 MB) or paste a YouTube/other link in `/review`. Hidden until set. |
+| Support / oppose | bill page, under the journey | Anonymous (random httpOnly cookie, stored only as a hash), one vote per browser per bill, changeable. Results only after voting; bar only from 10 votes. Labeled "not official, not representative" with a link to LawForum's official comments. |
+| Нийтийн өргөдөл | homepage (`#orgodol`) | 4 most-supported petitions from petition.parliament.mn (HTML feed; petitioner names/photos deliberately not shown). |
+| Байнгын хороод | homepage (`#horoo`) | 8 standing committees with chair and member count from the official member list. |
+
+Storage (laptop demo): `data/summaries/*.json` (explainers, can be committed), `data/opinions.json` and `data/videos/` (git-ignored). An online deployment needs a database instead of these files.
+
+## 7. Open items / TODO
 
 - `summary` slot on `Proposal` is reserved for human-reviewed AI summaries (`TODO(ai-summaries)` in `BillCard.tsx`).
 - English dictionary: add `en` to `src/lib/i18n` with the same shape as `mn.ts`.

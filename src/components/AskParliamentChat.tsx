@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import type { ChatAnswer, ChatEntity, ChatTurn } from "@/lib/ai/types";
+import { questionLanguage } from "@/lib/parliament/text";
 import { ArrowUpRight } from "./ui/icons";
 import styles from "./AskParliamentChat.module.css";
 
@@ -197,7 +198,7 @@ export function AskParliamentChat({
               {m.text}
             </p>
           ) : (
-            <AnswerCard key={m.id} result={m.result} disabled={loading} onChoose={(entity, title) => void send(m.question, { selected: entity, shown: `«${title}»` })} />
+            <AnswerCard key={m.id} result={m.result} english={questionLanguage(m.question) === "en"} disabled={loading} onChoose={(entity, title) => void send(m.question, { selected: entity, shown: `«${title}»` })} />
           ),
         )}
 
@@ -254,7 +255,7 @@ export function AskParliamentChat({
   );
 }
 
-function AnswerCard({ result, disabled, onChoose }: { result: ChatAnswer; disabled: boolean; onChoose: (entity: ChatEntity, title: string) => void }) {
+function AnswerCard({ result, english, disabled, onChoose }: { result: ChatAnswer; english: boolean; disabled: boolean; onChoose: (entity: ChatEntity, title: string) => void }) {
   const byNumber = new Map(result.citations.map((c) => [c.n, c]));
   const tone = result.status === "insufficient" ? styles.insufficient : result.status === "clarify" ? styles.clarify : result.mode === "data" ? styles.data : styles.ai;
   const label =
@@ -267,6 +268,13 @@ function AnswerCard({ result, disabled, onChoose }: { result: ChatAnswer; disabl
         {result.status === "answered" && result.mode === "data" ? <span className={styles.badge}>AI ашиглаагүй</span> : null}
         {result.focus ? <span className={styles.focus}>«{result.focus.title}»</span> : null}
       </header>
+
+      {result.understood ? (
+        <p className={styles.understood}>
+          {english ? "Searched Mongolian official records as: " : "Асуултыг ингэж ойлгов: "}
+          <q lang="mn">{result.understood}</q>
+        </p>
+      ) : null}
 
       <div className={styles.answerBody}>
         {result.points.map((p, i) => (
@@ -300,6 +308,23 @@ function AnswerCard({ result, disabled, onChoose }: { result: ChatAnswer; disabl
         <SourceList heading="Албан ёсны эх сурвалж" items={result.citations} />
       ) : null}
       {result.related?.length ? <SourceList heading="Шалгаж болох албан ёсны хуудсууд" items={result.related} muted /> : null}
+      {result.help ? (
+        <div className={styles.help}>
+          <strong>Хүчин төгөлдөр хуулийг шалгах</strong>
+          <p>{result.help.text}</p>
+          <ul>
+            {result.help.links.map((link) => (
+              <li key={link.url}>
+                <a href={link.url} target="_blank" rel="noopener noreferrer">
+                  {link.title}
+                  <ArrowUpRight size={13} />
+                  <span className="visually-hidden"> (шинэ цонхонд нээгдэнэ)</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </article>
   );
 }

@@ -1,0 +1,260 @@
+.journey {
+  display: grid;
+  gap: 18px;
+  margin: 24px 0 8px;
+  padding: 22px 24px 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.head {
+  display: grid;
+  gap: 4px;
+}
+.head h2 {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--blue-800);
+}
+.summary {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink-900);
+  line-height: 1.45;
+}
+
+/* ------------------------------------------------------------ track */
+.track {
+  --marker: 30px;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 6px;
+}
+/* connector from this marker to the next one; blue up to the furthest recorded stage */
+.step::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: calc(var(--marker) / 2 - 1.5px);
+  left: 50%;
+  width: calc(100% + 6px);
+  height: 3px;
+  background: var(--line);
+}
+.step:last-child::before {
+  display: none;
+}
+.step[data-link="filled"]::before {
+  background: var(--blue-800);
+  transform-origin: left;
+  animation: grow 500ms var(--ease-out) both;
+  animation-delay: inherit;
+}
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.step {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  text-align: center;
+  padding: 0 2px;
+  animation: stepIn var(--dur-4) var(--ease-out) both;
+}
+.step:nth-child(2) { animation-delay: 40ms; }
+.step:nth-child(3) { animation-delay: 80ms; }
+.step:nth-child(4) { animation-delay: 120ms; }
+.step:nth-child(5) { animation-delay: 160ms; }
+.step:nth-child(6) { animation-delay: 200ms; }
+.step:nth-child(7) { animation-delay: 240ms; }
+.step:nth-child(8) { animation-delay: 280ms; }
+.step:nth-child(9) { animation-delay: 320ms; }
+.step:nth-child(10) { animation-delay: 360ms; }
+@keyframes stepIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+}
+
+.marker {
+  display: grid;
+  place-items: center;
+  width: var(--marker);
+  height: var(--marker);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  background: var(--surface);
+  color: var(--ink-500);
+  border: 2px solid var(--line-strong);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.step:hover .marker {
+  transform: scale(1.12);
+}
+.name {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink-600);
+  overflow-wrap: anywhere;
+}
+.state {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ink-500);
+}
+
+.step[data-state="done"] .marker {
+  background: var(--blue-800);
+  border-color: var(--blue-800);
+  color: #fff;
+}
+.step[data-state="done"] .name {
+  color: var(--ink-900);
+}
+.step[data-state="done"] .state {
+  color: var(--blue-800);
+}
+.step[data-state="passed"] .marker {
+  border-color: var(--blue-800);
+  color: var(--blue-800);
+}
+.step[data-state="passed"] .name {
+  color: var(--ink-800);
+}
+.step[data-state="current"] .marker {
+  background: var(--gold-500);
+  border-color: var(--gold-500);
+  color: var(--blue-950);
+  box-shadow: 0 0 0 0 rgba(255, 199, 0, 0.55);
+  animation: pulse 2.4s var(--ease-out) infinite;
+}
+.step[data-state="current"] .name {
+  color: var(--ink-900);
+  font-weight: 800;
+}
+.step[data-state="current"] .state {
+  color: var(--gold-800);
+}
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 199, 0, 0.55);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 9px rgba(255, 199, 0, 0);
+  }
+}
+
+/* ------------------------------------------------------------ records */
+.records {
+  display: grid;
+  border-top: 1px solid var(--line);
+}
+.records li {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.9fr) minmax(0, 2fr);
+  gap: 4px 16px;
+  padding: 10px 8px;
+  margin: 0 -8px;
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  transition: background var(--dur-2);
+}
+.records li:hover {
+  background: var(--surface-2);
+}
+.recordStep {
+  font-weight: 700;
+  color: var(--ink-800);
+}
+.records li[data-state="current"] .recordStep {
+  color: var(--gold-800);
+}
+.records li[data-state="other"] .recordStep {
+  color: var(--ink-500);
+}
+.recordBody {
+  display: grid;
+  gap: 6px;
+  color: var(--ink-800);
+}
+.recordBody > span {
+  display: grid;
+  gap: 2px;
+}
+.recordBody small {
+  font-size: 12.5px;
+  color: var(--ink-600);
+}
+
+.source {
+  font-size: 12px;
+  color: var(--ink-500);
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------------ narrow: vertical track */
+@media (max-width: 760px) {
+  .journey {
+    padding: 18px 16px 14px;
+  }
+  .track {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .step::before {
+    top: calc(var(--marker) / 2);
+    left: calc(var(--marker) / 2 - 1.5px);
+    width: 3px;
+    height: calc(100% + 10px);
+  }
+  .step[data-link="filled"]::before {
+    transform-origin: top;
+    animation-name: growY;
+  }
+  @keyframes growY {
+    from {
+      transform: scaleY(0);
+    }
+  }
+  .step {
+    grid-template-columns: var(--marker) minmax(0, 1fr);
+    grid-template-areas:
+      "marker name"
+      "marker state";
+    justify-items: start;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 0;
+    text-align: left;
+  }
+  .marker {
+    grid-area: marker;
+  }
+  .name {
+    grid-area: name;
+    font-size: 14px;
+  }
+  .state {
+    grid-area: state;
+  }
+  .records li {
+    grid-template-columns: 1fr;
+  }
+}

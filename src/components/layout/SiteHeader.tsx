@@ -3,7 +3,8 @@ import styles from "./layout.module.css";
 import { HeaderNav } from "./HeaderNav";
 import type { NavItem } from "@/lib/types";
 import { t } from "@/lib/i18n";
-import { officialUrl } from "@/lib/site";
+import Link from "next/link";
+import { appUrl, officialUrl } from "@/lib/site";
 import { STATE_EMBLEM_SRC as STATE_EMBLEM } from "./emblem";
 
 /** Official menu groups as a fallback when the menu API is unreachable (labels from new.parliament.mn). */
@@ -19,13 +20,13 @@ export function SiteHeader({ nav }: { nav: NavItem[] }) {
   return (
     <header className={styles.header}>
       <div className={`container ${styles.headerInner}`}>
-        <a href="#top" className={styles.brand} aria-label={`${t.brand.line1} ${t.brand.line2}`}>
+        <Link href={appUrl.home()} className={styles.brand} aria-label={`${t.brand.line1} ${t.brand.line2} — нүүр хуудас`}>
           <Image src={STATE_EMBLEM} alt="" width={44} height={44} priority className={styles.emblem} />
           <span className={styles.wordmark} aria-hidden="true">
             <span>{t.brand.line1}</span>
             <span>{t.brand.line2}</span>
           </span>
-        </a>
+        </Link>
         <HeaderNav items={items} />
       </div>
       <div className="flag-stripe" aria-hidden="true" />

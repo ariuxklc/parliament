@@ -19,3 +19,8 @@ Thumbs.db
 # source materials from organizers/team (large binaries, keep out of the repo)
 *.pptx
 *.docx
+
+# laptop-demo runtime data (opinion votes, uploaded videos)
+/data/opinions.json
+/data/videos/
+/data/**/*.tmp

@@ -43,6 +43,22 @@ export async function fetchJson<T>(source: string, url: string, opts: FetchJsonO
   }
 }
 
+/** GET an HTML/text resource from a public source (used where no JSON API exists, e.g. petitions). */
+export async function fetchText(source: string, url: string, opts: FetchJsonOptions = {}): Promise<string> {
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      headers: { Accept: "text/html" },
+      signal: AbortSignal.timeout(opts.timeoutMs ?? 10_000),
+      ...(opts.revalidate !== undefined ? { next: { revalidate: opts.revalidate, tags: opts.tags } } : { cache: "no-store" }),
+    });
+  } catch {
+    throw new SourceError(source, undefined, `${source}: network error`);
+  }
+  if (!res.ok) throw new SourceError(source, res.status, `${source}: HTTP ${res.status}`);
+  return res.text();
+}
+
 /** Wraps a loader so one failing source never breaks the whole page. */
 export async function load<T>(label: string, fn: () => Promise<T>): Promise<Loaded<T>> {
   try {

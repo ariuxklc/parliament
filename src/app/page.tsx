@@ -9,10 +9,15 @@ import { MembersBlock } from "@/components/home/members/MembersBlock";
 import { StatsSection } from "@/components/home/stats/StatsSection";
 import { NewsSection } from "@/components/home/news/NewsSection";
 import { SectionSkeleton } from "@/components/ui/SectionSkeleton";
+import { FeaturedExplainer } from "@/components/home/featured/FeaturedExplainer";
+import { PetitionsSection } from "@/components/home/petitions/PetitionsSection";
+import { CommitteesSection } from "@/components/home/committees/CommitteesSection";
 import {
   getAttendanceStat,
   getBillBulletin,
+  getCommittees,
   getComposition,
+  getPetitions,
   getCurrentActivity,
   getLatestVotes,
   getMemberRoster,
@@ -34,6 +39,7 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 const SECTIONS = [
   { id: "odoo", label: t.sections.now },
   { id: "huuli", label: t.sections.laws },
+  { id: "orgodol", label: t.sections.petitions },
   { id: "gishuud", label: t.sections.members },
   { id: "too", label: t.sections.stats },
   { id: "medee", label: t.sections.news },
@@ -46,13 +52,18 @@ async function LegislationLoader({ query, defaultYear }: { query: ProposalQuery;
 
 async function MembersLoader() {
   const [roster, composition, sessions] = await Promise.all([getMemberRoster(), getComposition(), getSessions()]);
-  const attendance = await getAttendanceStat(sessions);
+  const [attendance, committees] = await Promise.all([getAttendanceStat(sessions), getCommittees(roster.ok ? roster.data : null)]);
   return (
     <>
       <MembersBlock roster={roster} />
+      <CommitteesSection committees={committees} />
       <StatsSection composition={composition} attendance={attendance} />
     </>
   );
+}
+
+async function PetitionsLoader() {
+  return <PetitionsSection petitions={await getPetitions()} />;
 }
 
 async function NewsLoader() {
@@ -82,9 +93,13 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
       <SectionNav links={SECTIONS} />
       <main id="main">
         <Hero current={current} openDrafts={openDrafts} bulletin={bulletin} today={today} />
+        <FeaturedExplainer />
         <ActivitySection schedule={schedule} votes={votes} bulletin={bulletin} />
         <Suspense fallback={<SectionSkeleton id="huuli" tone="light" height={1100} />}>
           <LegislationLoader query={query} defaultYear={defaultYear} />
+        </Suspense>
+        <Suspense fallback={null}>
+          <PetitionsLoader />
         </Suspense>
         <Suspense fallback={<SectionSkeleton id="gishuud" tone="dark" height={1200} />}>
           <MembersLoader />

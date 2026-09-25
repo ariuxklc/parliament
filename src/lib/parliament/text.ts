@@ -34,9 +34,20 @@ export const STOPWORDS = new Set(
     "бүртгэл бүртгэгдсэн эсэх төстэй өөр бусад жагсаа жагсаалт харуул мэдээлэл мэдээллийг мэдэх хүсэж хүсч байна вэ хэлэлцэгдэж хэлэлцэж хэлэлцсэн хэлэлцэх " +
     "хэлэлцүүлэг хэлэлцүүлэгт хэлэлцүүлгийн асуудал асуудлууд асуудлыг өргөн мэдүүлсэн мэдүүлэгдсэн батлагдсан баталсан батлах хэзээ хаана хэн хэний " +
     "хамт холбогдуулан боловсруулсан анхдагч төслүүдийг өөрчилсөн гарсан орсон дахь дэх ямар ямарууд " +
+    "би миний намайг над чи та таны байгаад байхад байсаар яах яаж яагаад яана болох болсон гээд гэхэд юм юмаа уу үү ээ " +
     "current latest recent bill bills law laws purpose explain stage status vote votes session sessions member members committee committees which what how many the of in on a to is are about this that"
   ).split(/\s+/),
 );
+
+/**
+ * "en" when a question is written mostly in Latin letters. Retrieval matches Mongolian official text,
+ * so such questions are translated to Mongolian before searching.
+ */
+export function questionLanguage(value: string): "mn" | "en" {
+  const latin = (value.match(/[A-Za-z]/g) ?? []).length;
+  const cyrillic = (value.match(/[Ѐ-ӿ]/g) ?? []).length;
+  return latin >= 3 && latin > cyrillic ? "en" : "mn";
+}
 
 /** Lowercase, unify quotes/dashes, collapse whitespace. */
 export function normalize(value: string): string {
@@ -135,4 +146,81 @@ export function passageHits(queryTopics: string[], text: string): number {
 /** Digits in a string, with leading zeros removed ("2026.07.03" → ["2026","7","3"]). */
 export function numbersIn(value: string): string[] {
   return (value.match(/\d+/g) ?? []).map((n) => n.replace(/^0+(?=\d)/, ""));
+}
+
+// Mongolian number words (standalone and attributive forms). Exact tokens only: "нэгж" (unit) is not "нэг".
+const NUMBER_WORDS: Record<string, number> = {
+  нэг: 1, нэгэн: 1, хоёр: 2, гурав: 3, гурван: 3, дөрөв: 4, дөрвөн: 4, тав: 5, таван: 5, зургаа: 6, зургаан: 6,
+  долоо: 7, долоон: 7, найм: 8, найман: 8, ес: 9, есөн: 9, арав: 10, арван: 10, хорь: 20, хорин: 20, гуч: 30, гучин: 30,
+  дөч: 40, дөчин: 40, тавь: 50, тавин: 50, жар: 60, жаран: 60, дал: 70, далан: 70, ная: 80, наян: 80, ер: 90, ерэн: 90,
+};
+const MULTIPLIERS: Record<string, number> = { зуу: 100, зуун: 100, мянга: 1000, мянган: 1000 };
+
+/**
+ * Numbers written in words in official text ("тавин нэгжтэй тэнцэх", "хорин таван хоног") as digits,
+ * so a statement saying "50 нэгж" is recognised as grounded in a source that says "тавин нэгж".
+ */
+export function spelledNumbersIn(value: string, opts: { composedOnly?: boolean } = {}): string[] {
+  const out = new Set<string>();
+  let total = 0;
+  let group = 0;
+  const flush = () => {
+    if (total + group > 0) out.add(String(total + group));
+    total = 0;
+    group = 0;
+  };
+  for (const token of tokens(value)) {
+    if (token in NUMBER_WORDS) {
+      group += NUMBER_WORDS[token];
+      if (!opts.composedOnly) out.add(String(NUMBER_WORDS[token]));
+    } else if (token in MULTIPLIERS) {
+      const m = MULTIPLIERS[token];
+      if (m === 1000) {
+        total = (total + (group || 1)) * m;
+        group = 0;
+      } else group = (group || 1) * m;
+      if (!opts.composedOnly) out.add(String(m));
+    } else flush();
+  }
+  flush();
+  return [...out];
+}
+
+const EN_SMALL: Record<string, number> = {
+  zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
+  thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19,
+  twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90,
+};
+const EN_SCALE: Record<string, number> = { hundred: 100, thousand: 1_000, million: 1_000_000 };
+
+/** English number words as whole values: "fifty-one" → 51, "one hundred and twenty" → 120. */
+export function englishNumbersIn(value: string): string[] {
+  const out = new Set<string>();
+  const words = value.toLowerCase().split(/[^a-z]+/).filter(Boolean);
+  let total = 0;
+  let group = 0;
+  let active = false;
+  const flush = () => {
+    if (active) out.add(String(total + group));
+    total = 0;
+    group = 0;
+    active = false;
+  };
+  words.forEach((w, i) => {
+    if (w in EN_SMALL) {
+      group += EN_SMALL[w];
+      active = true;
+    } else if (w in EN_SCALE) {
+      if (EN_SCALE[w] === 100) group = (group || 1) * 100;
+      else {
+        total += (group || 1) * EN_SCALE[w];
+        group = 0;
+      }
+      active = true;
+    } else if (w === "and" && active && (words[i + 1] ?? "") in EN_SMALL) {
+      // "one hundred and twenty": keep the number going
+    } else flush();
+  });
+  flush();
+  return [...out];
 }

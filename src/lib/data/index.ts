@@ -18,6 +18,9 @@ import type {
   WeeklySchedule,
 } from "../types";
 import { load, mapLimit } from "../http";
+import { safeImage } from "../images";
+import { officialUrl } from "../site";
+import { parsePetitions, type PetitionItem } from "../normalize/petitions";
 import { todayLocal, parseSourceDate, cleanText } from "../format";
 import { getAllProposals, getProposalDetail } from "../sources/lawforum";
 import { parliamentSite } from "../sources/parliamentSite";
@@ -243,6 +246,49 @@ export async function getComposition(): Promise<Loaded<ParliamentComposition>> {
 
 export async function getAttendanceStat(sessions: ParliamentSession[]): Promise<Loaded<AttendanceOverviewStat | null>> {
   return load("attendance overview", async () => normalizeAttendanceOverview(await parliamentSite.attendanceOverview(), sessions));
+}
+
+/* ----------------------------------------------------------------- petitions */
+
+export async function getPetitions(): Promise<Loaded<PetitionItem[]>> {
+  return load("petitions", async () => {
+    const items = parsePetitions(await parliamentSite.petitionsHtml(), 4);
+    if (!items.length) throw new Error("no petitions parsed");
+    return items;
+  });
+}
+
+/* ---------------------------------------------------------------- committees */
+
+export interface CommitteeInfo {
+  id: number;
+  name: string;
+  icon: string | null;
+  chair: string | null; // official short name, e.g. "Ж.Батжаргал"
+  memberCount: number;
+  url: string;
+}
+
+export async function getCommittees(roster: MemberRoster | null): Promise<Loaded<CommitteeInfo[]>> {
+  return load("committees", async () => {
+    const units = await parliamentSite.committees();
+    return units
+      .sort((a, b) => a.display_order - b.display_order)
+      .map((u) => {
+        const name = cleanText(u.name);
+        const members = roster?.members.filter((m) => m.committeeIds.includes(u.id)) ?? [];
+        const chairRole = /хороо$/i.test(name) ? `${name}ны дарга` : `${name} дарга`; // same wording as normalize/members.ts
+        const chair = members.find((m) => m.role === chairRole);
+        return {
+          id: u.id,
+          name,
+          icon: safeImage(u.icon),
+          chair: chair?.shortName ?? null,
+          memberCount: members.length,
+          url: officialUrl.committee(u.id),
+        };
+      });
+  });
 }
 
 /* ---------------------------------------------------------------------- menu */

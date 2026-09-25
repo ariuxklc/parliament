@@ -1,4 +1,4 @@
-import { numbersIn } from "../parliament/text.ts";
+import { englishNumbersIn, numbersIn, spelledNumbersIn } from "../parliament/text.ts";
 import { insufficientAnswer, joinPoints, withCitations } from "./compose.ts";
 import type { ChatAnswer, Evidence } from "./types.ts";
 
@@ -26,12 +26,23 @@ const RECORD_KINDS = new Set(["bill", "bulletin", "member", "committee"]);
 
 export type ValidationReport = { dropped: { reason: string; text: string }[] };
 
-function grounded(text: string, allowed: Set<string>): boolean {
-  return numbersIn(text).every((n) => allowed.has(n));
+/**
+ * Numbers a statement asserts: digits, plus numbers written as words (English or Mongolian) from 10 up.
+ * "fifty-one units" must be backed by the source just like "51 units". Small spelled numbers
+ * ("one proposal", "хоёр санал хураалт") are ordinary phrasing and are not checked.
+ */
+function claimedNumbers(text: string): string[] {
+  const spelled = [...spelledNumbersIn(text, { composedOnly: true }), ...englishNumbersIn(text)].filter((n) => Number(n) >= 10);
+  return [...numbersIn(text), ...spelled];
 }
 
+function grounded(text: string, allowed: Set<string>): boolean {
+  return claimedNumbers(text).every((n) => allowed.has(n));
+}
+
+/** Numbers a text supports: digits, plus Mongolian number words ("тавин" → 50). Used for sources and the question only. */
 function numberSet(...values: string[]): Set<string> {
-  return new Set(values.flatMap(numbersIn));
+  return new Set(values.flatMap((v) => [...numbersIn(v), ...spelledNumbersIn(v), ...englishNumbersIn(v)]));
 }
 
 export function relatedRecords(refs: readonly SourceRef[]): Evidence[] {

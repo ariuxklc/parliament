@@ -8,7 +8,9 @@ Ask Parliament AI is a **global Parliament information assistant**. It works end
 
 The earlier version answered questions about one hard-coded bill (11151) from 11 hand-copied clauses. Some of those anchors were wrong: "3.1" pointed at the Article 3 heading. That catalog has been removed. Clause text and anchors are now parsed live from the official LawForum page, for any bill.
 
-Verified 2026-09-25: typecheck and `next build` pass, 21/21 offline tests pass, and the live smoke tests below were run against the dev server with real OpenAI calls.
+Verified 2026-09-25: typecheck and `next build` pass, 34/34 offline tests pass, and the live smoke tests below were run against the dev server with real OpenAI calls.
+
+**Added later on 2026-09-25 (not pushed yet; see "Question understanding & legal questions" below):** an LLM question-understanding step for typos and conversational questions, a legal-situation mode with a server-built legalinfo.mn pointer, per-word vote search, and Mongolian number words in the number check.
 
 ## Architecture
 
@@ -50,6 +52,7 @@ Browser (/ask, launcher panel, /laws/[id])
 | `src/lib/ai/validate-request.ts` | Request parser and limits |
 | `src/lib/ai/compose.ts` | Answer builders, official-host allowlist |
 | `src/lib/ai/rate-limit.ts` | In-process limits + answer cache (cache is off in dev) |
+| `src/lib/ai/understand.ts` | Question-understanding schema/instructions, sanitizer, law-name validation, legalinfo.mn pointer |
 | `src/lib/parliament/data.ts` | Live read-only data access (server-only). Reuses the homepage clients |
 | `src/lib/parliament/lawforum-page.ts` | LawForum bill-page parser (clauses, anchors, file list) |
 | `src/lib/parliament/text.ts` | Mongolian stemming / matching (suffixes, fleeting vowels) |
@@ -88,6 +91,25 @@ Not used as factual sources: the DOCX/PPTX planning files, news sites, Wikipedia
 - **Votes:** keyword search. Only an explicit reference (this bill, picked option, id) pins the search to one bill, plus a no-earlier-than-submission date filter.
 - **Injection without a Mongolian topic, and "should I support…" questions** return before any model call.
 
+## Question understanding & legal questions
+
+**Why:** "Би мопед унаж байгаад баривдчихлаа. Яах уу?" returned "no information". The typo ("баривд-") and conversational words broke matching. The official vote search ANDs every word, so "мопед уна" found 0 of the 10 moped votes.
+
+- **Question understanding** (`lib/ai/understand.ts`, `understandQuestion` in `parliament-chat.ts`): a second small model call. It sees only the question and the previous user question. It returns a strict-schema plan: `correctedQuestion`, `kind` (enum), `searchTerms` (≤4 dictionary-form words), `lawNames` (≤3), `refersToPrevious`. It runs only when routing is weak: legal situations, `general` intent, or empty results. It is skipped for policy, injection, clarification and data answers. On failure the deterministic result stands.
+- **Sandbox:** the plan only steers search. Malformed or over-long fields are dropped, not truncated. A rewrite containing a URL falls back to the user's words. Numbers in the answer must come from the user's own words or the cited sources, never from the interpretation. The UI shows the interpretation ("Асуултыг ингэж ойлгов: …") so a wrong reading is visible.
+- **Legal mode** (`legal` intent, regex `LEGAL` in `intent.ts` or plan kind `legal_question`): evidence is Parliament's votes and bills on the topic. Server notes forbid advice ("та ингэх хэрэгтэй") and require saying that a vote does not prove a rule is in force.
+- **Pointer** (`help` on the answer, UI block "Хүчин төгөлдөр хуулийг шалгах"): server-built links to `legalinfo.mn/mn/advsearch/{law}`. This pattern was verified in a browser: "Зөрчлийн тухай" lists the law in force first. A suggested law name becomes a link **only if it appears in an official title we hold** (LawForum, bulletin, retrieved votes); an invented "Мопедын тухай хууль" is dropped. It is shown even on insufficient-evidence answers.
+- **Search fix:** `searchPollsByTerms` searches each word separately. Words from the user's question outrank planner-suggested law names, and conversational words were added to the stopwords.
+- **Number words:** sources often write amounts in words ("тавин нэгж"). The number check now reads Mongolian number words in sources, and the prompt asks the model to keep the source's form.
+
+Live result (2026-09-25): the moped question is read as "…баригдчихлаа…". It cites vote 5894 (2026-05-29, 62–33): the proposal to fine a moped/scooter crossing at a pedestrian crossing "тавин нэгжтэй тэнцэх хэмжээний төгрөгөөр". It says the vote doesn't prove the rule is in force, and links «Зөрчлийн тухай», «Замын хөдөлгөөний аюулгүй байдлын тухай» and «мопед» on legalinfo.mn.
+
+**English questions:** detected by letter count (`questionLanguage` in `text.ts`). Refusal checks run on the user's own English words first. Understanding then always runs and returns a Mongolian translation plus Cyrillic search terms. Retrieval uses the translation, since official records are Mongolian, and the English first pass is discarded. The explanation is written in English with official names kept in Mongolian («…»). Fixed server messages (refusals, clarifications, the legal pointer) are in English. Deterministic stage answers keep their official Mongolian wording. The UI shows "Searched Mongolian official records as: …".
+
+**Spelled-out numbers are checked too:** a live English answer said "fifty-one units" where the source says "тавин нэгж" (50). Numbers written as words in the answer (English or Mongolian, 10 and above) must now appear in the cited source, like digits.
+
+**Recommended next step: quote the law in force.** legalinfo.mn detail pages (`/mn/detail?lawId=12695` = Зөрчлийн тухай) are server-rendered and include the current moped rules: the helmet fine of "арван нэгж" and the shared-moped rules. The search endpoint (`POST /mn/advsearchList`) returns HTTP 500 without a browser session, so use a small curated list of verified `lawId`s for common citizen topics, parsed into articles and cited like LawForum clauses. Ask organizers/mentors (Э. Хангай) whether an official export exists first.
+
 ## Citation & safety contract
 
 - The model sees `S1…S8` refs, titles and passage text. It never sees URLs, real source IDs, keys, credentials, files or tools (a test asserts there is no `http` in the model input).
@@ -107,7 +129,7 @@ Question ≤500 chars; body ≤12 KB; history ≤6 turns (model sees 4 × 400 ch
 ## Testing
 
 ```bash
-npm run test:chat     # 21 offline tests: parser, matching, intents, ambiguity, linking, citations, numbers, injection, limits
+npm run test:chat     # 34 offline tests: parser, matching, intents, ambiguity, linking, citations, numbers, injection, limits, understanding, legal pointer, English
 npm run typecheck
 ```
 

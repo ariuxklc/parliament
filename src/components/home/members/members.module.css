@@ -1,7 +1,11 @@
 .section {
   position: relative;
   isolation: isolate;
+  /* `clip` hides the overhanging watermark without making the section a scroll container.
+     With `hidden`, the sticky showcase stuck to this section instead of the page and scrolled away.
+     Older browsers ignore `clip` and keep `hidden` (no sticky, nothing breaks). */
   overflow: hidden;
+  overflow: clip;
   padding: var(--section-y) 0;
   background: radial-gradient(120% 80% at 85% 0%, #0d2d78 0%, var(--blue-950) 55%) var(--blue-950);
   color: var(--ink-on-dark);
@@ -364,6 +368,14 @@
 .showcaseCol {
   position: sticky;
   top: calc(var(--nav-h) + 20px);
+  /* The loaded card (~830px) is taller than many laptop screens: keep it inside the viewport while it
+     follows the page, scrolling within itself instead of hiding its bottom edge below the fold. */
+  max-height: calc(100dvh - var(--nav-h) - 36px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--radius-lg);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
 }
 
 .showcase {

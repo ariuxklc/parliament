@@ -15,7 +15,16 @@ export function AskLauncher() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [compact, setCompact] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Past the hero, shrink to a round button so it does not cover page content (e.g. the member card).
+  useEffect(() => {
+    const onScroll = () => setCompact(window.scrollY > 480);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -39,6 +48,7 @@ export function AskLauncher() {
         ref={buttonRef}
         type="button"
         className={styles.fab}
+        data-compact={compact}
         aria-expanded={open}
         aria-controls="ask-parliament-panel"
         onClick={() => {
@@ -49,7 +59,7 @@ export function AskLauncher() {
         <span className={styles.fabMark} aria-hidden="true">
           ?
         </span>
-        <span>
+        <span className={styles.fabText}>
           <strong>УИХ-аас асуух</strong>
           <small>Ask Parliament AI</small>
         </span>

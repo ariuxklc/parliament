@@ -37,6 +37,9 @@ export type ChatChoice = { entity: ChatEntity; title: string; detail: string };
 
 export type AnswerStatus = "answered" | "insufficient" | "clarify";
 
+/** Server-owned pointers to where the law in force can be checked. Not citations: nothing in the answer rests on them. */
+export type LegalHelp = { text: string; links: { title: string; url: string }[] };
+
 export type ChatAnswer = {
   status: AnswerStatus;
   /** ai = model explanation of retrieved evidence; data = server template over official data (no model); none = no answer. */
@@ -54,6 +57,10 @@ export type ChatAnswer = {
   choices?: ChatChoice[];
   lastEntities: ChatEntity[];
   focus?: { entity: ChatEntity; title: string };
+  /** For legal-situation questions: where to check the law in force. */
+  help?: LegalHelp;
+  /** How the question was interpreted, when question understanding corrected or rephrased it. */
+  understood?: string;
 };
 
 export const INSUFFICIENT_ANSWER = "Одоогоор ашиглаж буй албан ёсны эх сурвалжаас энэ асуултад баталгаатай хариулах хангалттай мэдээлэл олдсонгүй.";
