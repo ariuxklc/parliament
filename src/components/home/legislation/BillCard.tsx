@@ -15,7 +15,7 @@ interface BillCardProps {
 }
 
 /**
- * One proposal as a quiet row: title, where it is, when. The whole row opens our bill page
+ * One proposal as a quiet row: when (left column), title, and where it is. The whole row opens our bill page
  * (/laws/{id}), which carries the official LawForum link, the stages and the 30-second explainer.
  */
 export function BillCard({ proposal: p, index, showUpdated }: BillCardProps) {
@@ -23,6 +23,10 @@ export function BillCard({ proposal: p, index, showUpdated }: BillCardProps) {
   const date = showUpdated && p.updatedAt ? p.updatedAt : p.publishedDate;
   return (
     <article className={styles.row} data-stage={p.stage} style={{ ["--i" as string]: index }}>
+      <time className={styles.rowDate} dateTime={date}>
+        {formatDate(date)}
+        {showUpdated && p.updatedAt ? <small>шинэчилсэн</small> : null}
+      </time>
       <h3 className={styles.rowTitle}>
         <Link href={appUrl.bill(p.id)} className={styles.rowLink}>
           {readableTitle(p.title)}
@@ -31,10 +35,6 @@ export function BillCard({ proposal: p, index, showUpdated }: BillCardProps) {
       <p className={styles.rowMeta}>
         <span className={styles.stage}>{p.stage === "drafting" ? t.laws.stageDrafting : t.laws.stageSubmitted}</span>
         <span>{typeLabel}</span>
-        <time dateTime={date}>
-          {showUpdated && p.updatedAt ? "шинэчилсэн " : ""}
-          {formatDate(date)}
-        </time>
       </p>
       <ArrowRight size={16} className={styles.rowArrow} />
     </article>

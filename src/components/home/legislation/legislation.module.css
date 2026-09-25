@@ -272,27 +272,44 @@
   pointer-events: none;
 }
 
+/* One calm column: date on the left, then the title and one quiet meta line, generous spacing.
+   Capped width keeps lines readable next to the full-width controls above. */
 .list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 48px;
-}
-@media (max-width: 860px) {
-  .list {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  max-width: 980px;
+  border-top: 1px solid var(--line);
 }
 
 .row {
   position: relative;
   display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) 20px;
+  grid-template-areas:
+    "date title arrow"
+    "date meta arrow";
   align-content: start;
-  grid-template-columns: minmax(0, 1fr) 20px;
-  gap: 6px 16px;
-  padding: 18px 0 20px;
+  gap: 8px 24px;
+  padding: 24px 4px 26px;
   border-bottom: 1px solid var(--line);
   animation: rowIn var(--dur-4) var(--ease-out) both;
   animation-delay: calc(var(--i, 0) * 35ms);
+  transition: background var(--dur-2) var(--ease-out);
+}
+.row:hover {
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+}
+.rowDate {
+  grid-area: date;
+  padding-top: 2px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-500);
+  font-variant-numeric: tabular-nums;
+}
+.rowDate small {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
 }
 .gridWrap[data-dir="past"] .row {
   animation-name: rowInFromRight;
@@ -320,13 +337,13 @@
 }
 
 .rowTitle {
-  grid-column: 1;
-  font-size: 16.5px;
-  line-height: 1.42;
+  grid-area: title;
+  font-size: 17px;
+  line-height: 1.45;
   font-weight: 600;
   color: var(--ink-900);
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -352,7 +369,7 @@
 }
 
 .rowMeta {
-  grid-column: 1;
+  grid-area: meta;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -379,10 +396,8 @@
 }
 
 .rowArrow {
-  grid-column: 2;
-  grid-row: 1;
-  align-self: start;
-  margin-top: 4px;
+  grid-area: arrow;
+  align-self: center;
   color: var(--ink-500);
   opacity: 0;
   transform: translateX(-6px);
@@ -391,11 +406,29 @@
     transform var(--dur-2) var(--ease-out),
     color var(--dur-2) var(--ease-out);
 }
-.row:hover .rowArrow,
-.projectRow:hover .rowArrow {
+.row:hover .rowArrow {
   opacity: 1;
   transform: none;
   color: var(--blue-800);
+}
+@media (max-width: 600px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) 20px;
+    grid-template-areas:
+      "date arrow"
+      "title arrow"
+      "meta arrow";
+    gap: 6px 14px;
+    padding: 20px 0 22px;
+  }
+  .rowDate {
+    padding-top: 0;
+    font-size: 13px;
+  }
+  .rowDate small {
+    display: inline;
+    margin-left: 6px;
+  }
 }
 @media (hover: none) {
   .rowArrow {
@@ -419,95 +452,3 @@
 }
 
 /* ============================================================ Submitted projects (/projects) */
-.projects {
-  display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
-  gap: 16px 56px;
-  margin-top: clamp(48px, 6vw, 72px);
-  padding-top: 32px;
-  border-top: 1px solid var(--line-strong);
-}
-@media (max-width: 860px) {
-  .projects {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-.projectsHead {
-  display: grid;
-  align-content: start;
-  gap: 8px;
-}
-.projectsHead h3 {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--ink-900);
-}
-.projectsHead p {
-  font-size: 14.5px;
-  line-height: 1.5;
-  color: var(--ink-600);
-}
-.projectsHead strong {
-  color: var(--ink-900);
-}
-.projectsAll {
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 6px;
-  font-size: 14.5px;
-  font-weight: 700;
-  color: var(--blue-800);
-}
-.projectsAll svg {
-  transition: transform var(--dur-2) var(--ease-out);
-}
-.projectsAll:hover svg {
-  transform: translateX(3px);
-}
-.projectsList li + li {
-  border-top: 1px solid var(--line);
-}
-.projectRow {
-  display: grid;
-  grid-template-columns: 96px minmax(0, 1fr) 20px;
-  gap: 16px;
-  align-items: baseline;
-  padding: 14px 0;
-}
-.projectRow time {
-  font-size: 13.5px;
-  color: var(--ink-500);
-  font-variant-numeric: tabular-nums;
-}
-.projectTitle {
-  font-size: 15.5px;
-  font-weight: 600;
-  line-height: 1.42;
-  color: var(--ink-900);
-  transition: color var(--dur-2) var(--ease-out);
-}
-.projectRow:hover .projectTitle {
-  color: var(--blue-800);
-}
-.projectRow .rowArrow {
-  grid-column: 3;
-  grid-row: auto;
-}
-@media (max-width: 520px) {
-  .projectRow {
-    grid-template-columns: minmax(0, 1fr) 20px;
-    gap: 4px 12px;
-  }
-  .projectRow time {
-    grid-column: 1;
-  }
-  .projectTitle {
-    grid-column: 1;
-  }
-  .projectRow .rowArrow {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-  }
-}

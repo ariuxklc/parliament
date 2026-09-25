@@ -1,0 +1,184 @@
+/* «Өргөн мэдүүлсэн төслүүд» gateway on the homepage. Prominent through space and scale, not colour:
+   a white card on the canvas, blue figures, one blue button, and the key-pattern edge in a soft blue. */
+.spotlight {
+  position: relative;
+  overflow: hidden;
+  margin: 0 0 clamp(32px, 4vw, 48px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink-900);
+  box-shadow: var(--shadow-1);
+}
+.spotlight :global(.meander) {
+  opacity: 0.35;
+}
+
+.inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: clamp(24px, 3vw, 48px);
+  padding: clamp(18px, 2.4vw, 28px) clamp(18px, 2.8vw, 34px) clamp(20px, 2.4vw, 28px);
+}
+
+.intro {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--blue-800);
+}
+.eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--gold-500);
+}
+.title {
+  max-width: 28ch;
+  font-size: clamp(20px, 1.9vw, 24px);
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--blue-900);
+  text-wrap: balance;
+}
+
+.figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px clamp(20px, 2.4vw, 32px);
+  margin: 2px 0 0;
+}
+.figures div {
+  display: flex;
+  flex-direction: column-reverse; /* number above its label; dt stays first in the markup */
+  gap: 2px;
+}
+.figures dd {
+  margin: 0;
+  font-size: clamp(22px, 2.1vw, 28px);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--blue-800);
+}
+.figures dt {
+  font-size: 13px;
+  color: var(--ink-500);
+}
+
+.cta {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  margin-top: 4px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--blue-800);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  transition:
+    background var(--dur-2) var(--ease-out),
+    transform var(--dur-2) var(--ease-out);
+}
+.cta svg {
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.cta:hover {
+  background: var(--blue-700);
+}
+.cta:hover svg {
+  transform: translateX(3px);
+}
+.cta:active {
+  transform: translateY(1px);
+}
+
+.latest {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+.latestLabel {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-500);
+}
+.latest ol {
+  display: grid;
+}
+.latest li {
+  border-top: 1px solid var(--line);
+}
+.latest li:last-child {
+  border-bottom: 1px solid var(--line);
+}
+.item {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr) 18px;
+  align-items: baseline;
+  gap: 14px;
+  padding: 12px 2px;
+}
+.item time {
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-500);
+}
+.itemTitle {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--ink-900);
+  transition: color var(--dur-2) var(--ease-out);
+}
+.itemArrow {
+  align-self: center;
+  color: var(--ink-500);
+  transition:
+    transform var(--dur-2) var(--ease-out),
+    color var(--dur-2) var(--ease-out);
+}
+.item:hover .itemTitle {
+  color: var(--blue-800);
+}
+.item:hover .itemArrow {
+  color: var(--blue-800);
+  transform: translateX(3px);
+}
+
+@media (max-width: 900px) {
+  .inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 520px) {
+  .item {
+    grid-template-columns: minmax(0, 1fr) 18px;
+    gap: 4px 12px;
+    padding: 14px 0;
+  }
+  .item time {
+    grid-column: 1;
+  }
+  .itemTitle {
+    grid-column: 1;
+  }
+  .itemArrow {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}

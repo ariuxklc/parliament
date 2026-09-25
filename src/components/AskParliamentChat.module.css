@@ -43,11 +43,12 @@
 }
 
 /* ------------------------------------------------------------- transcript */
+/* On /ask and bill pages the conversation grows with the page, so the page scroll is the only scroll
+   (a box scrolling inside a scrolling page kept "fighting" the reader). The fixed-height panel variant
+   keeps its own scroll. */
 .transcript {
   flex: 1;
   min-height: 280px;
-  max-height: 620px;
-  overflow-y: auto;
   padding: 24px;
   display: grid;
   align-content: start;
@@ -55,53 +56,13 @@
   background: var(--surface-2);
 }
 .panel .transcript {
-  max-height: none;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .welcome {
   display: grid;
   gap: 14px;
-}
-.steps {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  counter-reset: step;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.steps li {
-  counter-increment: step;
-  position: relative;
-  padding: 12px 12px 12px 40px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  color: var(--ink-600);
-  font-size: 13px;
-  line-height: 1.4;
-}
-.steps li::before {
-  content: counter(step);
-  position: absolute;
-  left: 12px;
-  top: 12px;
-  width: 20px;
-  height: 20px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--blue-800);
-  color: white;
-  font-size: 11px;
-  font-weight: 800;
-}
-.steps strong {
-  color: var(--ink-900);
-}
-.panel .steps {
-  grid-template-columns: 1fr;
 }
 .suggestLabel {
   color: var(--ink-500);
@@ -625,7 +586,6 @@
   .contextBar, .form { padding-inline: 16px; }
   .footer { padding: 0 16px 12px; }
   .error { padding-inline: 16px; }
-  .steps { grid-template-columns: 1fr; }
   .question { max-width: 94%; }
   .answer { max-width: 100%; }
 }

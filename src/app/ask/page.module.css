@@ -1,0 +1,125 @@
+/* /ask — minimal: one focused column, the chat is the page. Sources and caveats are one tap away.
+   (Own module so the shared askPage.module.css used by /laws/{id} stays untouched.) */
+.page {
+  padding-block: clamp(24px, 4vw, 48px) clamp(48px, 7vw, 88px);
+}
+.column {
+  display: grid;
+  gap: 14px;
+  max-width: 860px;
+  margin-inline: auto;
+}
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+  color: var(--ink-600);
+  font-size: 14px;
+}
+.crumbs a {
+  color: var(--blue-800);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--blue-800);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--gold-500);
+}
+.title {
+  color: var(--blue-900);
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+.lede {
+  color: var(--ink-600);
+  font-size: clamp(15.5px, 1.4vw, 17px);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+/* sources + caveats, folded (same fold language as the bill pages) */
+.more {
+  border-top: 1px solid var(--line);
+  margin-top: 6px;
+}
+.more > summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  cursor: pointer;
+  list-style: none;
+}
+.more > summary::-webkit-details-marker {
+  display: none;
+}
+.moreTitle {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink-800);
+}
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-800);
+}
+.toggle svg {
+  flex-shrink: 0;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.more[open] .toggle svg {
+  transform: rotate(180deg);
+}
+.more[open] .whenClosed,
+.more:not([open]) .whenOpen {
+  display: none;
+}
+.moreBody {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 16px;
+}
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 14px;
+}
+.sources a {
+  color: var(--blue-800);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--blue-200);
+  text-underline-offset: 3px;
+}
+.sources a:hover {
+  text-decoration-color: var(--blue-800);
+}
+.note {
+  max-width: 72ch;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-500);
+}

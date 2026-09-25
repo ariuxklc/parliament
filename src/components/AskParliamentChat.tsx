@@ -92,10 +92,19 @@ export function AskParliamentChat({
     }
   }, [messages, storageKey]);
 
+  // Move the view only for a new turn the reader just started: their question (with the "searching" note
+  // below it) when they ask, then the BEGINNING of the answer when it arrives. Status updates, timers and
+  // restored conversations never move it, so scrolling up to read is never pulled back down.
+  const follow = useRef<"question" | "answer" | null>(null);
   useEffect(() => {
     const el = transcriptRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [messages, loading, statuses]);
+    const last = messages.at(-1);
+    if (!el || !last || !follow.current) return;
+    const expected = follow.current === "question" ? "user" : "assistant";
+    if (last.role !== expected) return;
+    follow.current = last.role === "user" ? "answer" : null;
+    el.querySelector<HTMLElement>(`[data-turn="${last.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [messages]);
 
   useEffect(() => {
     if (autoFocus) inputRef.current?.focus({ preventScroll: true });
@@ -120,6 +129,7 @@ export function AskParliamentChat({
     const history: ChatTurn[] = messages
       .slice(-HISTORY_TURNS)
       .map((m) => (m.role === "user" ? { role: "user", content: m.text } : { role: "assistant", content: plain(m.result.answer) }));
+    follow.current = "question";
     setMessages((current) => [...current, { id: nextId.current++, role: "user", text: trimmed }]);
     setQuestion("");
     setError(null);
@@ -165,6 +175,8 @@ export function AskParliamentChat({
           : cause instanceof Error
             ? cause.message
             : "Хариулт авах боломжгүй байна.";
+      // No answer to follow: without this, removing the question would scroll to the previous answer instead.
+      follow.current = null;
       setMessages((current) => current.slice(0, -1));
       setQuestion(trimmed);
       setError({ message, retry: () => void send(trimmed) });
@@ -212,11 +224,7 @@ export function AskParliamentChat({
       <div ref={transcriptRef} className={styles.transcript} aria-live="polite" aria-busy={loading}>
         {messages.length === 0 ? (
           <div className={styles.welcome}>
-            <ol className={styles.steps} aria-label="Юу хийж чадах вэ">
-              <li><strong>Хууль</strong> — хүчин төгөлдөр хууль, заалт, түүний өөрчлөлтүүд</li>
-              <li><strong>УИХ</strong> — төсөл, хуралдаан, санал хураалт, гишүүд</li>
-              <li><strong>Эх сурвалж</strong> — хариулт бүр албан ёсны холбоостой</li>
-            </ol>
+            {/* Minimal start screen (Ariuka, 2026-09-26): the example questions show what it can do. */}
             <p className={styles.suggestLabel}>Жишээ асуултууд</p>
             <div className={styles.suggestions}>
               {prompts.map((s) => (
@@ -230,12 +238,12 @@ export function AskParliamentChat({
 
         {messages.map((m) =>
           m.role === "user" ? (
-            <p className={styles.question} key={m.id}>
+            <p className={styles.question} key={m.id} data-turn={m.id}>
               <span className="visually-hidden">Таны асуулт: </span>
               {m.text}
             </p>
           ) : (
-            <AnswerCard key={m.id} result={m.result} />
+            <AnswerCard key={m.id} result={m.result} turn={m.id} />
           ),
         )}
 
@@ -344,9 +352,9 @@ function CopyButton({ result }: { result: ChatAnswer }) {
   );
 }
 
-function AnswerCard({ result }: { result: ChatAnswer }) {
+function AnswerCard({ result, turn }: { result: ChatAnswer; turn?: number }) {
   return (
-    <article className={`${styles.answer} ${styles.ai}`}>
+    <article className={`${styles.answer} ${styles.ai}`} data-turn={turn}>
       <header className={styles.answerHead}>
         <span className={styles.answerLabel}>AI туслах</span>
         {result.steps.length ? (

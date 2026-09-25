@@ -141,6 +141,6 @@ export function parseProposalQuery(params: URLSearchParams | Record<string, stri
     typeId: Number.isInteger(typeId) && typeId > 0 ? typeId : null,
     sort: SORTS.includes(sort) ? sort : "newest",
     q: (get("q") ?? "").slice(0, 120),
-    limit: Number.isInteger(limit) && limit >= 6 && limit <= 96 ? limit : 12,
+    limit: Number.isInteger(limit) && limit >= 5 && limit <= 96 ? limit : 5,
   };
 }

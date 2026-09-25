@@ -101,6 +101,8 @@ export async function getProjectListItems(): Promise<{ items: ProjectListItem[];
 export interface ProjectsOverview {
   total: number;
   withBrief: number;
+  /** Official files published with the projects (every attachment on d.parliament.mn). */
+  documents: number;
   /** Most recent projects that have an AI brief (for a homepage entry block). */
   latestWithBrief: ProjectListItem[];
 }
@@ -110,7 +112,12 @@ export async function getProjectsOverview(limit = 3): Promise<ProjectsOverview |
   try {
     const { items } = await getProjectListItems();
     const withBrief = items.filter((i) => i.hasBrief).sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
-    return { total: items.length, withBrief: withBrief.length, latestWithBrief: withBrief.slice(0, Math.max(0, limit)) };
+    return {
+      total: items.length,
+      withBrief: withBrief.length,
+      documents: items.reduce((n, i) => n + i.documentCount, 0),
+      latestWithBrief: withBrief.slice(0, Math.max(0, limit)),
+    };
   } catch {
     return null;
   }

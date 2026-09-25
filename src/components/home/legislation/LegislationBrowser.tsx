@@ -14,7 +14,9 @@ import { EmptyState } from "../../ui/EmptyState";
 import { OfficialSourceLink, SourceNote } from "../../ui/OfficialSourceLink";
 import { ChevronDown, Search } from "../../ui/icons";
 
-const PAGE = 12;
+/** Bills shown first, and how many each "show more" adds (kept short so the list stays calm). */
+const FIRST = 5;
+const STEP = 10;
 
 /** Query → URL params (defaults omitted so shared links stay short). */
 function toParams(q: ProposalQuery, defaultYear: number): URLSearchParams {
@@ -70,7 +72,7 @@ export function LegislationBrowser({ initial, defaultYear }: { initial: Proposal
 
   const update = useCallback(
     (patch: Partial<ProposalQuery>) => {
-      const next: ProposalQuery = { ...query, ...patch, limit: PAGE };
+      const next: ProposalQuery = { ...query, ...patch, limit: FIRST };
       if (patch.year !== undefined && patch.year !== query.year) {
         setDirection(patch.year < query.year ? "past" : "future");
         // keep a session only if it belongs to the new year
@@ -213,7 +215,7 @@ export function LegislationBrowser({ initial, defaultYear }: { initial: Proposal
         ) : (
           <div key={generation} className={styles.list}>
             {data.items.map((p, i) => (
-              <BillCard key={p.id} proposal={p} index={i % PAGE} showUpdated={query.sort === "updated"} />
+              <BillCard key={p.id} proposal={p} index={i % STEP} showUpdated={query.sort === "updated"} />
             ))}
           </div>
         )}
@@ -226,7 +228,7 @@ export function LegislationBrowser({ initial, defaultYear }: { initial: Proposal
             className={`${ui.button} ${ui.buttonGhost}`}
             disabled={status === "loading"}
             onClick={() => {
-              const next = { ...query, limit: Math.min(96, data.items.length + PAGE) };
+              const next = { ...query, limit: Math.min(96, data.items.length + STEP) };
               setQuery(next);
               void run(next, { append: true });
             }}
