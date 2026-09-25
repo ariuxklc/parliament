@@ -57,8 +57,8 @@ export interface Proposal {
   updatedAt?: string | null;
   sourceUrl: string;
   /**
-   * TODO(ai-summaries): plain-language summary slot. Must stay empty until a summary has been
-   * generated from the official text AND approved by a human reviewer.
+   * Unused on list cards for now — AI explainers live on the bill page (src/lib/summaries), labeled as
+   * AI-generated with clause citations.
    */
   summary?: { text: string; reviewedBy: string; reviewedAt: string } | null;
 }

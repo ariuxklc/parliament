@@ -309,18 +309,18 @@
   gap: 4px;
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 4px 0;
+  padding: 0;
 }
 .sectionNavList::-webkit-scrollbar {
   display: none;
 }
 .sectionNavIndicator {
   position: absolute;
-  top: 4px;
-  bottom: 4px;
+  bottom: 0;
   left: 0;
-  border-radius: var(--radius-pill);
-  background: var(--blue-800);
+  height: 3px;
+  border-radius: 2px;
+  background: var(--gold-500);
   transition:
     transform var(--dur-3) var(--ease-out),
     width var(--dur-3) var(--ease-out);
@@ -331,30 +331,35 @@
   z-index: 1;
   display: inline-flex;
   align-items: center;
-  height: 36px;
-  padding: 0 16px;
-  border-radius: var(--radius-pill);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--blue-800);
+  height: 48px;
+  padding: 0 14px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink-600);
   white-space: nowrap;
   transition: color var(--dur-2) var(--ease-out);
 }
 .sectionNavLink:hover {
-  color: var(--blue-600);
+  color: var(--ink-900);
 }
 .sectionNavLink[aria-current="true"] {
-  color: #fff;
+  color: var(--blue-800);
 }
 
 /* ================================================================ Footer */
 .footer {
+  position: relative;
   background: var(--blue-950);
   color: var(--ink-on-dark-muted);
   padding: 64px 0 32px;
   font-size: 14px;
+}
+.footerEdge {
+  position: absolute;
+  top: 18px;
+  left: 0;
+  right: 0;
+  opacity: 0.28;
 }
 .footerGrid {
   display: grid;

@@ -1,32 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import type { ChatAnswer, ChatEntity, ChatTurn } from "@/lib/ai/types";
-import { questionLanguage } from "@/lib/parliament/text";
+import { Fragment, useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import type { ChatAnswer, ChatCitation, ChatEntity, ChatEvent, ChatTurn } from "@/lib/ai/types";
 import { ArrowUpRight } from "./ui/icons";
 import styles from "./AskParliamentChat.module.css";
 
-type Message =
-  | { id: number; role: "user"; text: string }
-  | { id: number; role: "assistant"; question: string; result: ChatAnswer };
+type Message = { id: number; role: "user"; text: string } | { id: number; role: "assistant"; question: string; result: ChatAnswer };
 
 export type AskContext = { entity: ChatEntity; title: string; kindLabel: string };
 
 const GLOBAL_SUGGESTIONS = [
-  "Сүүлийн үед ямар хуулийн төслүүд хэлэлцэгдэж байна?",
-  "Өгөгдлийн тухай хуулийн төсөл юу өөрчлөх гэж байгаа вэ?",
-  "2025 онд боловсролтой холбоотой ямар төслүүд байсан бэ?",
-  "Боловсролын ерөнхий хуулийн төслийн санал хураалтын үр дүн ямар байсан бэ?",
+  "Намайг ажлаас гэнэт халчихлаа, цалингаа ч аваагүй. Би юу хийх вэ?",
+  "Мопед унахад ямар дүрэм, торгууль байдаг вэ?",
+  "Зөрчлийн тухай хууль 2025, 2026 онд хэрхэн өөрчлөгдсөн бэ?",
+  "2026 оны 6-р сарын 26-нд УИХ юу хэлэлцэж, юу баталсан бэ?",
 ];
+
+/** One-tap follow-ups under the latest answer — the next thing a worried person usually wants. */
+const FOLLOW_UPS = ["Энгийнээр тайлбарлаад өгөөч", "Одоо юу хийх вэ?", "Хаана хандах вэ?", "Өргөдөл бичихэд туслаач"];
+const FOLLOW_UPS_EN = ["Explain it more simply", "What should I do now?", "Where can I get help?", "Help me write a letter"];
+const isEnglish = (text: string) => (text.match(/[A-Za-z]/g)?.length ?? 0) > (text.match(/[Ѐ-ӿ]/g)?.length ?? 0);
 
 const CONTEXT_SUGGESTIONS = [
   "Энэ төсөл юу өөрчлөх гэж байгаа вэ?",
-  "Энэ төсөл иргэдэд хэрхэн хамаарах вэ?",
-  "Энэ төсөл одоо ямар шатанд явж байна?",
+  "Энэ төсөл надад хэрхэн хамаарах вэ?",
+  "Энэ төсөлтэй төстэй хүчин төгөлдөр хууль байгаа юу?",
 ];
 
-const MAX_CHARS = 500;
-const HISTORY_TURNS = 6;
+const MAX_CHARS = 1_000;
+const HISTORY_TURNS = 8;
+const STORAGE_VERSION = "v2";
 
 function sessionId(): string {
   try {
@@ -40,10 +43,8 @@ function sessionId(): string {
   }
 }
 
-const MODE_LABEL: Record<string, string> = {
-  ai: "AI тайлбар",
-  data: "Албан ёсны өгөгдлөөс",
-};
+/** Assistant answers go back as history without citation markers (the model re-checks facts with tools). */
+const plain = (text: string) => text.replace(/\[\d+\]/g, "").slice(0, 3_000);
 
 export function AskParliamentChat({
   context,
@@ -56,12 +57,13 @@ export function AskParliamentChat({
   suggestions?: string[];
   autoFocus?: boolean;
 }) {
-  const storageKey = `ask-parliament:${context ? `${context.entity.type}-${context.entity.id}` : "global"}`;
+  const storageKey = `ask-parliament:${STORAGE_VERSION}:${context ? `${context.entity.type}-${context.entity.id}` : "global"}`;
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
-  const [lastEntities, setLastEntities] = useState<ChatEntity[]>([]);
   const [loading, setLoading] = useState(false);
+  const [statuses, setStatuses] = useState<string[]>([]);
   const [error, setError] = useState<{ message: string; retry?: () => void } | null>(null);
+  const [elapsed, setElapsed] = useState(0);
   const transcriptRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const nextId = useRef(1);
@@ -70,10 +72,9 @@ export function AskParliamentChat({
   // Keep the conversation for this tab only (sessionStorage) so a refresh does not lose it.
   useEffect(() => {
     try {
-      const saved = JSON.parse(sessionStorage.getItem(storageKey) ?? "null") as { messages: Message[]; lastEntities: ChatEntity[] } | null;
+      const saved = JSON.parse(sessionStorage.getItem(storageKey) ?? "null") as { messages: Message[] } | null;
       if (saved?.messages?.length) {
         setMessages(saved.messages);
-        setLastEntities(saved.lastEntities ?? []);
         nextId.current = Math.max(...saved.messages.map((m) => m.id)) + 1;
       }
     } catch {
@@ -85,42 +86,78 @@ export function AskParliamentChat({
   useEffect(() => {
     if (!restored.current) return;
     try {
-      sessionStorage.setItem(storageKey, JSON.stringify({ messages: messages.slice(-20), lastEntities }));
+      sessionStorage.setItem(storageKey, JSON.stringify({ messages: messages.slice(-20) }));
     } catch {
       /* ignore */
     }
-  }, [messages, lastEntities, storageKey]);
+  }, [messages, storageKey]);
 
   useEffect(() => {
     const el = transcriptRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [messages, loading]);
+  }, [messages, loading, statuses]);
 
   useEffect(() => {
     if (autoFocus) inputRef.current?.focus({ preventScroll: true });
   }, [autoFocus]);
 
-  async function send(text: string, opts: { selected?: ChatEntity; shown?: string } = {}) {
+  // Start loading the most-asked laws on the server as soon as the chat is shown.
+  useEffect(() => {
+    void fetch("/api/chat", { method: "GET" }).catch(() => {});
+  }, []);
+
+  // Seconds spent waiting, so a long search can say so kindly.
+  useEffect(() => {
+    if (!loading) return;
+    setElapsed(0);
+    const timer = window.setInterval(() => setElapsed((s) => s + 1), 1_000);
+    return () => window.clearInterval(timer);
+  }, [loading]);
+
+  async function send(text: string) {
     const trimmed = text.trim();
     if (!trimmed || trimmed.length > MAX_CHARS || loading) return;
-    const history: ChatTurn[] = messages.slice(-HISTORY_TURNS).map((m) =>
-      m.role === "user" ? { role: "user", content: m.text } : { role: "assistant", content: m.result.answer.slice(0, 1_000) },
-    );
-    setMessages((current) => [...current, { id: nextId.current++, role: "user", text: opts.shown ?? trimmed }]);
+    const history: ChatTurn[] = messages
+      .slice(-HISTORY_TURNS)
+      .map((m) => (m.role === "user" ? { role: "user", content: m.text } : { role: "assistant", content: plain(m.result.answer) }));
+    setMessages((current) => [...current, { id: nextId.current++, role: "user", text: trimmed }]);
     setQuestion("");
     setError(null);
+    setStatuses([]);
     setLoading(true);
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-ask-session": sessionId() },
-        body: JSON.stringify({ question: trimmed, history, context: context?.entity, lastEntities, selected: opts.selected }),
-        signal: AbortSignal.timeout(60_000),
+        body: JSON.stringify({ question: trimmed, history, context: context?.entity }),
+        signal: AbortSignal.timeout(120_000),
       });
-      const data = (await response.json().catch(() => ({}))) as ChatAnswer & { error?: string };
-      if (!response.ok || !data.status) throw new Error(data.error || "Хариулт авах боломжгүй байна. Дахин оролдоно уу.");
-      setMessages((current) => [...current, { id: nextId.current++, role: "assistant", question: trimmed, result: data }]);
-      if (data.lastEntities?.length) setLastEntities(data.lastEntities.slice(0, 3));
+      if (!response.ok || !response.body) {
+        const data = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error || "Хариулт авах боломжгүй байна. Дахин оролдоно уу.");
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let answer: ChatAnswer | null = null;
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let newline: number;
+        while ((newline = buffer.indexOf("\n")) >= 0) {
+          const line = buffer.slice(0, newline).trim();
+          buffer = buffer.slice(newline + 1);
+          if (!line) continue;
+          const event = JSON.parse(line) as ChatEvent;
+          if (event.type === "status") setStatuses((s) => (s.includes(event.text) ? s : [...s, event.text]));
+          else if (event.type === "answer") answer = event.answer;
+          else if (event.type === "error") throw new Error(event.error);
+        }
+      }
+      if (!answer) throw new Error("Хариулт дутуу ирлээ. Дахин оролдоно уу.");
+      const result = answer;
+      setMessages((current) => [...current, { id: nextId.current++, role: "assistant", question: trimmed, result }]);
     } catch (cause) {
       const message =
         cause instanceof Error && cause.name === "TimeoutError"
@@ -130,9 +167,10 @@ export function AskParliamentChat({
             : "Хариулт авах боломжгүй байна.";
       setMessages((current) => current.slice(0, -1));
       setQuestion(trimmed);
-      setError({ message, retry: () => void send(trimmed, opts) });
+      setError({ message, retry: () => void send(trimmed) });
     } finally {
       setLoading(false);
+      setStatuses([]);
     }
   }
 
@@ -150,7 +188,6 @@ export function AskParliamentChat({
 
   function reset() {
     setMessages([]);
-    setLastEntities([]);
     setError(null);
     try {
       sessionStorage.removeItem(storageKey);
@@ -175,10 +212,10 @@ export function AskParliamentChat({
       <div ref={transcriptRef} className={styles.transcript} aria-live="polite" aria-busy={loading}>
         {messages.length === 0 ? (
           <div className={styles.welcome}>
-            <ol className={styles.steps} aria-label="Хэрхэн ажилладаг вэ">
-              <li><strong>Хайна</strong> — УИХ, LawForum-ын албан ёсны мэдээллээс</li>
-              <li><strong>Тайлбарлана</strong> — олдсон эх сурвалжид л тулгуурлан</li>
-              <li><strong>Холбоосоор</strong> — эх сурвалжийг өөрөө шалгана</li>
+            <ol className={styles.steps} aria-label="Юу хийж чадах вэ">
+              <li><strong>Хууль</strong> — хүчин төгөлдөр хууль, заалт, түүний өөрчлөлтүүд</li>
+              <li><strong>УИХ</strong> — төсөл, хуралдаан, санал хураалт, гишүүд</li>
+              <li><strong>Эх сурвалж</strong> — хариулт бүр албан ёсны холбоостой</li>
             </ol>
             <p className={styles.suggestLabel}>Жишээ асуултууд</p>
             <div className={styles.suggestions}>
@@ -198,14 +235,36 @@ export function AskParliamentChat({
               {m.text}
             </p>
           ) : (
-            <AnswerCard key={m.id} result={m.result} english={questionLanguage(m.question) === "en"} disabled={loading} onChoose={(entity, title) => void send(m.question, { selected: entity, shown: `«${title}»` })} />
+            <AnswerCard key={m.id} result={m.result} />
           ),
         )}
+
+        {!loading && messages.at(-1)?.role === "assistant" ? (
+          <div className={styles.followUps} aria-label="Дараагийн асуулт">
+            {(isEnglish((messages.at(-1) as Extract<Message, { role: "assistant" }>).question) ? FOLLOW_UPS_EN : FOLLOW_UPS).map((f) => (
+              <button type="button" key={f} onClick={() => void send(f)}>
+                {f}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         {loading ? (
           <div className={styles.loading} role="status">
             <span className={styles.pulse} aria-hidden="true" />
-            Албан ёсны эх сурвалжаас хайж, тайлбар бэлтгэж байна…
+            <div>
+              <p>{statuses.length ? statuses[statuses.length - 1] : "Таны асуултыг хүлээж авлаа. Холбогдох мэдээллийг хайж байна…"}</p>
+              {statuses.length > 1 ? (
+                <ul className={styles.statusTrail}>
+                  {statuses.slice(0, -1).slice(-3).map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ul>
+              ) : null}
+              {elapsed >= 12 ? (
+                <p className={styles.slowNote}>Хуулийн эх бичвэр урт тул түр хүлээнэ үү — танд яг хамаарах заалтыг олж байна.</p>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </div>
@@ -223,7 +282,7 @@ export function AskParliamentChat({
 
       <form className={styles.form} onSubmit={submit}>
         <label htmlFor={`ask-${storageKey}`} className="visually-hidden">
-          Улсын Их Хурлын талаар асуулт
+          Хууль, Улсын Их Хурлын талаар асуулт
         </label>
         <textarea
           id={`ask-${storageKey}`}
@@ -233,7 +292,7 @@ export function AskParliamentChat({
           onKeyDown={onKeyDown}
           maxLength={MAX_CHARS}
           rows={2}
-          placeholder={context ? "Энэ төсөл эсвэл УИХ-ын талаар асуугаарай…" : "УИХ-ын талаар асуугаарай…"}
+          placeholder={context ? "Энэ төсөл, хууль эсвэл УИХ-ын талаар асуугаарай…" : "Хууль эсвэл УИХ-ын талаар асуугаарай…"}
           disabled={loading}
         />
         <div className={styles.formSide}>
@@ -244,7 +303,7 @@ export function AskParliamentChat({
         </div>
       </form>
       <div className={styles.footer}>
-        <p>AI тайлбар нь албан ёсны эх бичвэр, хууль зүйн зөвлөгөө биш. Эх сурвалжийн холбоосоор шалгана уу.</p>
+        <p>AI туслахын хариулт нь хууль зүйн зөвлөгөө биш. Чухал шийдвэр гаргахаасаа өмнө эх сурвалжийн холбоосоор шалгана уу.</p>
         {messages.length ? (
           <button type="button" onClick={reset} disabled={loading}>
             Шинэ яриа
@@ -255,87 +314,163 @@ export function AskParliamentChat({
   );
 }
 
-function AnswerCard({ result, english, disabled, onChoose }: { result: ChatAnswer; english: boolean; disabled: boolean; onChoose: (entity: ChatEntity, title: string) => void }) {
-  const byNumber = new Map(result.citations.map((c) => [c.n, c]));
-  const tone = result.status === "insufficient" ? styles.insufficient : result.status === "clarify" ? styles.clarify : result.mode === "data" ? styles.data : styles.ai;
-  const label =
-    result.status === "insufficient" ? "Баталгаатай мэдээлэл олдсонгүй" : result.status === "clarify" ? "Тодруулга" : MODE_LABEL[result.mode] ?? "Хариулт";
+/* ----------------------------------------------------------------- answer */
 
+/** The answer as plain text with its sources, for saving or sending to someone. */
+export function answerAsText(result: ChatAnswer): string {
+  const body = result.answer.replace(/\*\*/g, "").replace(/\*([^*\s][^*\n]*?)\*/g, "$1");
+  const sources = result.citations.map((c) => `[${c.n}] ${c.title} — ${c.url}`).join("\n");
+  return sources ? `${body}\n\nЭх сурвалж:\n${sources}` : body;
+}
+
+function CopyButton({ result }: { result: ChatAnswer }) {
+  const [copied, setCopied] = useState(false);
   return (
-    <article className={`${styles.answer} ${tone}`}>
+    <button
+      type="button"
+      className={styles.copy}
+      onClick={() => {
+        void navigator.clipboard
+          ?.writeText(answerAsText(result))
+          .then(() => {
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 2_000);
+          })
+          .catch(() => {});
+      }}
+    >
+      {copied ? "Хуулбарласан ✓" : "Хуулбарлах"}
+    </button>
+  );
+}
+
+function AnswerCard({ result }: { result: ChatAnswer }) {
+  return (
+    <article className={`${styles.answer} ${styles.ai}`}>
       <header className={styles.answerHead}>
-        <span className={styles.answerLabel}>{label}</span>
-        {result.status === "answered" && result.mode === "data" ? <span className={styles.badge}>AI ашиглаагүй</span> : null}
-        {result.focus ? <span className={styles.focus}>«{result.focus.title}»</span> : null}
+        <span className={styles.answerLabel}>AI туслах</span>
+        {result.steps.length ? (
+          <details className={styles.lookups}>
+            <summary>{result.steps.length} эх сурвалжаас хайсан</summary>
+            <ul>
+              {result.steps.map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
+        <CopyButton result={result} />
       </header>
 
-      {result.understood ? (
-        <p className={styles.understood}>
-          {english ? "Searched Mongolian official records as: " : "Асуултыг ингэж ойлгов: "}
-          <q lang="mn">{result.understood}</q>
-        </p>
-      ) : null}
-
       <div className={styles.answerBody}>
-        {result.points.map((p, i) => (
-          <p key={i}>
-            {p.text}
-            {p.citations.map((n) => {
-              const c = byNumber.get(n);
-              return c ? (
-                <a key={n} className={styles.cite} href={c.url} target="_blank" rel="noopener noreferrer" title={c.title} aria-label={`Эх сурвалж ${n}: ${c.title} (шинэ цонхонд)`}>
-                  {n}
-                </a>
-              ) : null;
-            })}
-          </p>
-        ))}
-        {result.limitations ? <p className={styles.limitations}>{result.limitations}</p> : null}
+        <RichText text={result.answer} citations={result.citations} />
+        {result.unverifiedNumbers ? (
+          <p className={styles.limitations}>Хариултын зарим тоог хайсан эх сурвалжаас тулгаж чадсангүй — эх сурвалжийн холбоосоор шалгана уу.</p>
+        ) : null}
       </div>
 
-      {result.choices?.length ? (
-        <div className={styles.choices}>
-          {result.choices.map((c) => (
-            <button type="button" key={`${c.entity.type}-${c.entity.id}`} onClick={() => onChoose(c.entity, c.title)} disabled={disabled}>
-              <span>{c.title}</span>
-              <small>{c.detail}</small>
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      {result.citations.length ? (
-        <SourceList heading="Албан ёсны эх сурвалж" items={result.citations} />
-      ) : null}
-      {result.related?.length ? <SourceList heading="Шалгаж болох албан ёсны хуудсууд" items={result.related} muted /> : null}
-      {result.help ? (
-        <div className={styles.help}>
-          <strong>Хүчин төгөлдөр хуулийг шалгах</strong>
-          <p>{result.help.text}</p>
-          <ul>
-            {result.help.links.map((link) => (
-              <li key={link.url}>
-                <a href={link.url} target="_blank" rel="noopener noreferrer">
-                  {link.title}
-                  <ArrowUpRight size={13} />
-                  <span className="visually-hidden"> (шинэ цонхонд нээгдэнэ)</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      {result.citations.length ? <SourceList heading="Албан ёсны эх сурвалж" items={result.citations} /> : null}
+      {result.consulted.length && !result.citations.length ? <SourceList heading="Харсан албан ёсны эх сурвалжууд" items={result.consulted} muted /> : null}
     </article>
   );
 }
 
-function SourceList({ heading, items, muted = false }: { heading: string; items: ChatAnswer["citations"]; muted?: boolean }) {
+type Block = { kind: "p"; lines: string[] } | { kind: "h"; text: string } | { kind: "ul"; items: string[] } | { kind: "ol"; items: string[] };
+
+/**
+ * Light Markdown: paragraphs, "- " and "1. " lists, "### " sub-headings. Rendered as text — never HTML.
+ * Single line breaks are kept, so a drafted letter keeps its address and signature lines.
+ */
+function blocks(text: string): Block[] {
+  const out: Block[] = [];
+  let para: string[] = [];
+  const flush = () => {
+    if (para.length) out.push({ kind: "p", lines: para });
+    para = [];
+  };
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    const bullet = /^[-*•]\s+(.*)$/.exec(line);
+    const numbered = /^\d{1,2}[.)]\s+(.*)$/.exec(line);
+    const heading = /^#{1,4}\s+(.*)$/.exec(line);
+    if (!line) flush();
+    else if (bullet || numbered) {
+      flush();
+      const kind: "ul" | "ol" = bullet ? "ul" : "ol";
+      const item = (bullet ?? numbered)![1];
+      const last = out[out.length - 1];
+      if (last && (last.kind === "ul" || last.kind === "ol") && last.kind === kind) last.items.push(item);
+      else out.push(kind === "ul" ? { kind: "ul", items: [item] } : { kind: "ol", items: [item] });
+    } else if (heading) {
+      flush();
+      out.push({ kind: "h", text: heading[1] });
+    } else para.push(line);
+  }
+  flush();
+  return out;
+}
+
+function inline(text: string, citations: ChatCitation[]): ReactNode[] {
+  return text.split(/(\*\*[^*\n]+\*\*|\*[^*\s][^*\n]*?\*|\[\d+\])/g).map((part, i) => {
+    const bold = /^\*\*([^*\n]+)\*\*$/.exec(part);
+    if (bold) return <strong key={i}>{bold[1]}</strong>;
+    const em = /^\*([^*\n]+)\*$/.exec(part);
+    if (em) return <em key={i}>{em[1]}</em>;
+    const cite = /^\[(\d+)\]$/.exec(part);
+    if (cite) {
+      const c = citations.find((x) => x.n === Number(cite[1]));
+      return c ? (
+        <a key={i} className={styles.cite} href={c.url} target="_blank" rel="noopener noreferrer" title={c.title} aria-label={`Эх сурвалж ${c.n}: ${c.title} (шинэ цонхонд)`}>
+          {c.n}
+        </a>
+      ) : null;
+    }
+    return <Fragment key={i}>{part}</Fragment>;
+  });
+}
+
+export function RichText({ text, citations }: { text: string; citations: ChatCitation[] }) {
+  return (
+    <>
+      {blocks(text).map((b, i) =>
+        b.kind === "ul" ? (
+          <ul key={i} className={styles.richList}>
+            {b.items.map((item, j) => (
+              <li key={j}>{inline(item, citations)}</li>
+            ))}
+          </ul>
+        ) : b.kind === "ol" ? (
+          <ol key={i} className={styles.richList}>
+            {b.items.map((item, j) => (
+              <li key={j}>{inline(item, citations)}</li>
+            ))}
+          </ol>
+        ) : b.kind === "h" ? (
+          <p key={i} className={styles.subhead}>
+            {inline(b.text, citations)}
+          </p>
+        ) : (
+          <p key={i}>
+            {b.lines.map((line, j) => (
+              <Fragment key={j}>
+                {j ? <br /> : null}
+                {inline(line, citations)}
+              </Fragment>
+            ))}
+          </p>
+        ),
+      )}
+    </>
+  );
+}
+
+function SourceList({ heading, items, muted = false }: { heading: string; items: ChatCitation[]; muted?: boolean }) {
   return (
     <div className={`${styles.sources} ${muted ? styles.sourcesMuted : ""}`}>
       <strong>{heading}</strong>
       <ol>
         {items.map((c) => (
-          <li key={c.sourceId}>
+          <li key={`${c.url}|${c.title}`}>
             <a href={c.url} target="_blank" rel="noopener noreferrer">
               {muted ? null : <span className={styles.sourceNumber}>{c.n}</span>}
               <span className={styles.sourceText}>

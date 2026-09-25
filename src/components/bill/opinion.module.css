@@ -12,6 +12,30 @@
     padding: 18px 16px;
   }
 }
+/* narrow side column */
+.poll[data-compact="true"] {
+  margin: 0;
+  padding: 16px 18px;
+  gap: 12px;
+  border-radius: var(--radius-lg);
+}
+.poll[data-compact="true"] .head h2 {
+  font-size: 15.5px;
+}
+.poll[data-compact="true"] .head p {
+  font-size: 13px;
+}
+.poll[data-compact="true"] .buttons {
+  flex-direction: column;
+  gap: 8px;
+}
+.poll[data-compact="true"] .choice {
+  flex: none;
+  max-width: none;
+  width: 100%;
+  min-height: 44px;
+  font-size: 15px;
+}
 
 .head {
   display: grid;

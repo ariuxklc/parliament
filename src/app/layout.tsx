@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Golos_Text } from "next/font/google";
 import "./globals.css";
 import { t } from "@/lib/i18n";
-import { AskLauncher } from "@/components/ask/AskLauncher";
+import { ChatDock } from "@/components/assistant/ChatDock";
 
 // Open-licence grotesque with full Mongolian Cyrillic (Ө ө Ү ү) — close in tone to the SF Pro Display
 // used on new.parliament.mn, which we cannot redistribute.
@@ -37,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {t.brand.skipToContent}
         </a>
         {children}
-        <AskLauncher />
+        <ChatDock />
       </body>
     </html>
   );

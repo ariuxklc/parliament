@@ -24,3 +24,6 @@ Thumbs.db
 /data/opinions.json
 /data/videos/
 /data/**/*.tmp
+
+# submitted-projects: extracted text of official files (re-creatable)
+/data/cache/

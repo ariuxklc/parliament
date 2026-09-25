@@ -2,10 +2,11 @@
 
 25 September 2026
 
-> **Superseded in part — see [`HANDOFF.md`](HANDOFF.md).** This assessment describes the first, single-bill design.
-> The implementation is now a global assistant with live retrieval from LawForum and new.parliament.mn,
-> `OPENAI_API_KEY` is configured, and the hand-copied clause catalog (which had some wrong anchors) was replaced
-> by parsing the official LawForum page. The sandbox, citation and cost principles below still apply.
+> **Superseded — see [`HANDOFF.md`](HANDOFF.md).** This assessment describes the first, single-bill, tightly
+> sandboxed design. Ask Parliament AI is now a tool-using assistant (by the team's choice on 2026-09-25) with read-only
+> tools over legalinfo.mn, parliament.mn, LawForum, meetings, votes and transcripts. Server-owned citation links,
+> confidentiality (no secrets in model context) and the cost limits carry over; the "answer only from pre-selected
+> passages" restriction does not.
 
 ## A. Existing project findings
 

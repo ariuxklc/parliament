@@ -4,26 +4,25 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   gap: 16px 32px;
-  margin-bottom: clamp(28px, 4vw, 44px);
+  margin-bottom: clamp(28px, 3.6vw, 40px);
 }
 
 .titleWrap {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .title {
-  font-size: clamp(24px, 2.7vw, 34px);
-  line-height: 1.12;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
+  font-size: clamp(28px, 3.1vw, 40px);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.015em;
   color: var(--blue-800);
   text-wrap: balance;
 }
 
 .subtitle {
-  max-width: 62ch;
+  max-width: 56ch;
   color: var(--ink-600);
   font-size: 16px;
   line-height: 1.55;
@@ -43,27 +42,24 @@
   }
 }
 
-/* ---------------------------------------------------------- Ornament */
+/* ---------------------------------------------------------- Ornament (the official site's gold rule, shortened) */
 .ornament {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: var(--gold-600);
-  width: 132px;
+  gap: 6px;
+  color: var(--gold-500);
+  width: 64px;
 }
 .ornament::before,
 .ornament::after {
   content: "";
-  height: 2px;
+  height: 3px;
   flex: 1;
   background: currentColor;
   border-radius: 2px;
 }
 .ornament::before {
-  flex: 0 0 28px;
-}
-.dark .ornament {
-  color: var(--gold-500);
+  flex: 0 0 14px;
 }
 
 /* ---------------------------------------------------------- Source link */

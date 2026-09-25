@@ -1,0 +1,73 @@
+/* 960px matches the bill page's own layout breakpoint (askPage.module.css .layout) */
+.desktopOnly {
+  display: grid;
+  gap: 16px;
+}
+.mobileOnly {
+  display: none;
+}
+@media (max-width: 960px) {
+  .desktopOnly {
+    display: none;
+  }
+  .mobileOnly {
+    display: grid;
+    gap: 16px;
+    margin-top: 18px;
+  }
+}
+
+/* document-based brief (submitted-projects session) in the slot under the journey */
+.briefSlot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  margin: 16px 0 8px;
+  align-items: start;
+}
+.briefSlot[data-video="true"] {
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 280px);
+}
+.briefMain {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.briefVideo {
+  position: sticky;
+  top: calc(var(--nav-h, 56px) + 16px);
+}
+.docsLink {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--blue-800);
+  transition: border-color var(--dur-2), background var(--dur-2);
+}
+.docsLink:hover {
+  border-color: var(--blue-800);
+  background: var(--blue-50);
+}
+.docsLink svg {
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.docsLink:hover svg {
+  transform: translateX(3px);
+}
+@media (max-width: 760px) {
+  .briefSlot[data-video="true"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .briefVideo {
+    position: static;
+    order: -1;
+  }
+}

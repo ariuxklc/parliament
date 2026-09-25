@@ -15,6 +15,7 @@ const OFFICIAL_LINKS = [
 export function SiteFooter({ generatedAt }: { generatedAt: string }) {
   return (
     <footer className={styles.footer}>
+      <div className={`meander ${styles.footerEdge}`} aria-hidden="true" />
       <div className="container">
         <div className={styles.footerGrid}>
           <div>

@@ -7,46 +7,14 @@
   overflow: hidden;
   overflow: clip;
   padding: var(--section-y) 0;
-  background: radial-gradient(120% 80% at 85% 0%, #0d2d78 0%, var(--blue-950) 55%) var(--blue-950);
-  color: var(--ink-on-dark);
-}
-
-.watermark {
-  position: absolute;
-  z-index: -1;
-  right: -120px;
-  top: 40px;
-  width: 620px;
-  height: 620px;
-  pointer-events: none;
-}
-.watermark span {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: url("https://new.parliament.mn/uploads/unit/State_emblem_of_Mongolia.png") center / contain no-repeat;
-  filter: grayscale(1) brightness(2.4);
-  opacity: 0.045;
-}
-
-.layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 400px;
-  gap: 32px;
-  align-items: start;
-}
-@media (max-width: 1100px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-}
-.rosterCol {
-  min-width: 0;
+  background: var(--canvas);
+  color: var(--ink-900);
 }
 
 /* ============================================================ Filters */
 .filters {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   margin-bottom: 20px;
 }
@@ -62,10 +30,10 @@
   min-height: 40px;
   padding: 0 14px 0 10px;
   border-radius: var(--radius-pill);
-  border: 1px solid var(--line-on-dark);
+  border: 1px solid var(--line-strong);
   font-size: 13.5px;
   font-weight: 600;
-  color: var(--ink-on-dark);
+  color: var(--ink-700);
   transition:
     background var(--dur-2) var(--ease-out),
     border-color var(--dur-2) var(--ease-out),
@@ -73,17 +41,20 @@
 }
 .chip > span.tabular {
   font-size: 12px;
-  font-weight: 700;
-  opacity: 0.75;
+  font-weight: 600;
+  color: var(--ink-500);
 }
 .chip:hover {
-  border-color: rgba(255, 255, 255, 0.45);
+  border-color: var(--blue-800);
+  color: var(--blue-800);
 }
 .chip[aria-pressed="true"] {
-  background: #fff;
-  color: var(--blue-950);
-  border-color: #fff;
-  box-shadow: inset 0 -3px 0 var(--party, var(--gold-500));
+  background: var(--blue-800);
+  color: #fff;
+  border-color: var(--blue-800);
+}
+.chip[aria-pressed="true"] > span.tabular {
+  color: var(--blue-100);
 }
 .chipLogo {
   width: 18px;
@@ -97,37 +68,43 @@
   flex-wrap: wrap;
   gap: 8px;
 }
-.darkField {
+.field {
   position: relative;
   display: inline-flex;
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
 }
-.darkField select,
-.darkField input {
-  min-height: 44px;
+.field select,
+.field input {
+  min-height: 42px;
+  max-width: 100%;
   border-radius: var(--radius-pill);
-  border: 1px solid var(--line-on-dark);
-  background: rgba(255, 255, 255, 0.04);
-  color: #fff;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-900);
   padding: 0 16px;
   font-size: 14px;
+  outline: 0;
+  transition: border-color var(--dur-2) var(--ease-out);
 }
-.darkField select option {
-  color: var(--ink-900);
+.field select:focus-visible,
+.field input:focus {
+  border-color: var(--blue-800);
 }
-.darkField input::placeholder {
-  color: var(--ink-on-dark-muted);
+.field input::placeholder {
+  color: var(--ink-500);
 }
-.darkSearch {
+.search {
   flex: 1 1 220px;
   max-width: 320px;
 }
-.darkSearch svg {
+.search svg {
   position: absolute;
   left: 14px;
-  color: var(--ink-on-dark-muted);
+  color: var(--ink-500);
 }
-.darkSearch input {
+.search input {
   width: 100%;
   padding-left: 38px;
 }
@@ -135,7 +112,7 @@
 /* ============================================================ Roster grid */
 .grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 14px;
 }
 @media (max-width: 1100px) and (min-width: 700px) {
@@ -171,9 +148,9 @@
   text-align: left;
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: var(--blue-900);
-  border: 1px solid var(--line-on-dark);
-  color: #fff;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-900);
   transform: translateZ(0);
   transition:
     transform var(--dur-3) var(--ease-out),
@@ -197,16 +174,16 @@
 }
 .card:hover,
 .card:focus-visible {
-  transform: translate3d(0, -6px, 0) scale(1.035);
-  box-shadow: var(--shadow-3);
-  border-color: rgba(255, 255, 255, 0.35);
+  transform: translate3d(0, -4px, 0);
+  box-shadow: var(--shadow-2);
+  border-color: var(--line-strong);
   z-index: 2;
   outline: none;
 }
 .card:focus-visible {
   box-shadow:
     0 0 0 3px var(--gold-500),
-    var(--shadow-3);
+    var(--shadow-2);
 }
 .card:hover::after,
 .card:focus-visible::after,
@@ -214,16 +191,8 @@
   transform: scaleX(1);
 }
 .card[data-selected="true"] {
-  border-color: var(--gold-500);
-  box-shadow: 0 0 0 1px var(--gold-500);
-}
-
-/* highlight one, neighbours recede */
-.grid:has(.card:hover) .card:not(:hover),
-.grid:has(.card:focus-visible) .card:not(:focus-visible) {
-  opacity: 0.5;
-  transform: scale(0.97);
-  filter: saturate(0.55);
+  border-color: var(--blue-800);
+  box-shadow: 0 0 0 1px var(--blue-800);
 }
 
 .portrait {
@@ -231,7 +200,7 @@
   display: block;
   aspect-ratio: 4 / 5;
   overflow: hidden;
-  background: linear-gradient(160deg, #173a8a, var(--blue-950));
+  background: var(--blue-100);
 }
 .portraitImg {
   object-fit: cover;
@@ -240,14 +209,9 @@
 }
 .card:hover .portraitImg,
 .card:focus-visible .portraitImg {
-  transform: scale(1.07);
+  transform: scale(1.04);
 }
-.portrait::after {
-  content: "";
-  position: absolute;
-  inset: 45% 0 0 0;
-  background: linear-gradient(180deg, rgba(10, 36, 102, 0) 0%, rgba(10, 36, 102, 0.88) 100%);
-}
+
 .portraitFallback {
   position: absolute;
   inset: 0;
@@ -255,19 +219,8 @@
   place-items: center;
   font-size: 42px;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.4);
-}
-.spotlight {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: radial-gradient(220px circle at var(--mx) var(--my), rgba(255, 255, 255, 0.2), transparent 60%);
-  opacity: 0;
-  transition: opacity var(--dur-3) var(--ease-out);
-  mix-blend-mode: soft-light;
-}
-.card:hover .spotlight {
-  opacity: 1;
+  color: var(--blue-800);
+  opacity: 0.4;
 }
 .roleChip {
   position: absolute;
@@ -278,24 +231,24 @@
   width: fit-content;
   padding: 4px 9px;
   border-radius: var(--radius-pill);
-  background: var(--gold-500);
-  color: var(--blue-950);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--blue-900);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.25;
+  box-shadow: 0 1px 2px rgba(6, 26, 74, 0.18);
 }
 
 .cardInfo {
   position: relative;
   display: grid;
   gap: 1px;
-  padding: 10px 12px 14px;
-  margin-top: -34px; /* overlap the portrait gradient */
+  padding: 12px 14px 16px;
   z-index: 2;
 }
 .lastName {
   font-size: 12.5px;
-  color: var(--ink-on-dark-muted);
+  color: var(--ink-500);
 }
 .firstName {
   font-size: 15.5px;
@@ -310,8 +263,8 @@
   align-items: center;
   gap: 6px;
   margin-top: 6px;
-  font-size: 12px;
-  color: var(--ink-on-dark);
+  font-size: 12.5px;
+  color: var(--ink-600);
 }
 .partySwatch {
   width: 8px;
@@ -320,42 +273,11 @@
   background: var(--party, var(--gold-500));
   flex-shrink: 0;
 }
-.committeeLine {
-  display: block;
-  font-size: 11.5px;
-  line-height: 1.35;
-  color: var(--ink-on-dark-muted);
-  max-height: 0;
-  opacity: 0;
-  transform: translateY(6px);
-  transition:
-    max-height var(--dur-3) var(--ease-out),
-    opacity var(--dur-2) var(--ease-out),
-    transform var(--dur-3) var(--ease-out),
-    margin var(--dur-3) var(--ease-out);
-}
-.card:hover .committeeLine,
-.card:focus-visible .committeeLine {
-  max-height: 4em;
-  opacity: 1;
-  transform: none;
-  margin-top: 6px;
-}
-@media (hover: none) {
-  /* touch: keep essential info visible, no hover-only content */
-  .committeeLine {
-    max-height: none;
-    opacity: 1;
-    transform: none;
-    margin-top: 6px;
-  }
-}
-
 .none {
   padding: 24px;
-  border: 1px dashed var(--line-on-dark);
+  border: 1px dashed var(--line-strong);
   border-radius: var(--radius-md);
-  color: var(--ink-on-dark-muted);
+  color: var(--ink-600);
 }
 .more {
   display: flex;
@@ -364,27 +286,15 @@
   margin-top: 20px;
 }
 
-/* ============================================================ Showcase */
-.showcaseCol {
-  position: sticky;
-  top: calc(var(--nav-h) + 20px);
-  /* The loaded card (~830px) is taller than many laptop screens: keep it inside the viewport while it
-     follows the page, scrolling within itself instead of hiding its bottom edge below the fold. */
-  max-height: calc(100dvh - var(--nav-h) - 36px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  border-radius: var(--radius-lg);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
-}
-
+/* ============================================================ Card (dialog) */
 .showcase {
   position: relative;
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--surface);
   color: var(--ink-900);
-  box-shadow: var(--shadow-3);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-1);
 }
 
 .showcaseMedia {
@@ -605,7 +515,7 @@
   color: var(--ink-500);
 }
 
-/* ============================================================ Mobile sheet */
+/* ============================================================ Dialog: sheet on phones, centred card above 700px */
 .sheet {
   position: fixed;
   inset: auto 0 0 0;
@@ -656,4 +566,27 @@
   background: rgba(255, 255, 255, 0.92);
   color: var(--ink-900);
   box-shadow: var(--shadow-1);
+}
+
+@media (min-width: 700px) {
+  .sheet {
+    inset: 0;
+    width: min(440px, calc(100vw - 32px));
+    max-height: min(820px, calc(100dvh - 48px));
+    margin: auto;
+    border-radius: var(--radius-lg);
+  }
+  .sheet[open] {
+    animation: cardPop var(--dur-3) var(--ease-out) both;
+  }
+  .sheet .showcase {
+    max-height: min(820px, calc(100dvh - 48px));
+    border-radius: var(--radius-lg);
+  }
+}
+@keyframes cardPop {
+  from {
+    transform: translate3d(0, 12px, 0) scale(0.97);
+    opacity: 0;
+  }
 }

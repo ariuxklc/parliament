@@ -150,7 +150,7 @@ export function numbersIn(value: string): string[] {
 
 // Mongolian number words (standalone and attributive forms). Exact tokens only: "нэгж" (unit) is not "нэг".
 const NUMBER_WORDS: Record<string, number> = {
-  нэг: 1, нэгэн: 1, хоёр: 2, гурав: 3, гурван: 3, дөрөв: 4, дөрвөн: 4, тав: 5, таван: 5, зургаа: 6, зургаан: 6,
+  нэг: 1, нэгэн: 1, хоёр: 2, хоер: 2, гурав: 3, гурван: 3, дөрөв: 4, дөрвөн: 4, тав: 5, таван: 5, зургаа: 6, зургаан: 6,
   долоо: 7, долоон: 7, найм: 8, найман: 8, ес: 9, есөн: 9, арав: 10, арван: 10, хорь: 20, хорин: 20, гуч: 30, гучин: 30,
   дөч: 40, дөчин: 40, тавь: 50, тавин: 50, жар: 60, жаран: 60, дал: 70, далан: 70, ная: 80, наян: 80, ер: 90, ерэн: 90,
 };
@@ -184,6 +184,33 @@ export function spelledNumbersIn(value: string, opts: { composedOnly?: boolean }
   }
   flush();
   return [...out];
+}
+
+const NUMBER_WORD_ALT = [...Object.keys(NUMBER_WORDS), ...Object.keys(MULTIPLIERS)].sort((a, b) => b.length - a.length).join("|");
+const UNIT_ALT = "нэгж|төгрөг|хувь|хоног|сар|жил|цаг";
+const SPELLED_AMOUNT = new RegExp(`(?<![\\p{L}])((?:(?:${NUMBER_WORD_ALT})\\s+)+)(${UNIT_ALT})`, "giu");
+
+/**
+ * Write the digits next to amounts spelled out in official text: "арван нэгжтэй" → "арван (10) нэгжтэй".
+ * The wording stays verbatim; the digits stop "арван нэгж" (10 units) being misread as "арван нэг" (11).
+ */
+export function annotateSpelledAmounts(text: string): string {
+  return text.replace(SPELLED_AMOUNT, (match, nums: string, unit: string) => {
+    const value = spelledNumbersIn(nums, { composedOnly: true })[0];
+    return value ? `${nums.trimEnd()} (${value}) ${unit}` : match;
+  });
+}
+
+/** "value|unit" amounts in a text, from digits ("400 нэгж", "(10) нэгжтэй") and spelled numbers ("тавин нэгж"). */
+export function amountsIn(value: string): string[] {
+  const out: string[] = [];
+  const digits = new RegExp(`(\\d{1,3}(?:[ ,\\u00a0]\\d{3})+|\\d+)\\)?\\s*(${UNIT_ALT})`, "giu");
+  for (const m of value.matchAll(digits)) out.push(`${Number(m[1].replace(/[ , ]/g, ""))}|${m[2].toLocaleLowerCase("mn")}`);
+  for (const m of value.matchAll(SPELLED_AMOUNT)) {
+    const n = spelledNumbersIn(m[1], { composedOnly: true })[0];
+    if (n) out.push(`${n}|${m[2].toLocaleLowerCase("mn")}`);
+  }
+  return out;
 }
 
 const EN_SMALL: Record<string, number> = {

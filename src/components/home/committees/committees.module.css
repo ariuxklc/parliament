@@ -1,89 +1,60 @@
 .section {
-  padding: var(--section-y) 0 calc(var(--section-y) * 0.6);
-  background: var(--canvas);
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-@media (max-width: 1000px) {
-  .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 480px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.tile {
-  position: relative;
-  display: grid;
-  align-content: start;
-  gap: 8px;
-  height: 100%;
-  padding: 18px 18px 16px;
+  padding: var(--section-y) 0;
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  transition:
-    transform var(--dur-2) var(--ease-out),
-    box-shadow var(--dur-2) var(--ease-out),
-    border-color var(--dur-2),
-    opacity var(--dur-2);
 }
-.tile:hover,
-.tile:focus-visible {
-  transform: translate3d(0, -3px, 0);
-  box-shadow: var(--shadow-2);
-  border-color: var(--blue-200);
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 48px;
+  border-top: 1px solid var(--line-strong);
 }
-.grid:has(.tile:hover) .tile:not(:hover) {
-  opacity: 0.7;
+@media (max-width: 760px) {
+  .list {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
-.icon {
-  width: 40px;
-  height: 40px;
+.list > li {
+  border-bottom: 1px solid var(--line);
 }
-.icon img {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-  transition: transform var(--dur-3) var(--ease-out);
-}
-.tile:hover .icon img {
-  transform: scale(1.08);
+
+.item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 16px;
+  gap: 4px 16px;
+  padding: 16px 0 18px;
 }
 .name {
-  font-size: 15.5px;
-  line-height: 1.35;
-  font-weight: 800;
+  font-size: 16.5px;
+  font-weight: 600;
+  line-height: 1.4;
   color: var(--ink-900);
-  padding-right: 18px;
-}
-.tile:hover .name {
-  color: var(--blue-800);
+  transition: color var(--dur-2) var(--ease-out);
 }
 .meta {
-  font-size: 13px;
-  color: var(--ink-600);
+  grid-column: 1;
+  font-size: 13.5px;
+  color: var(--ink-500);
 }
 .arrow {
-  position: absolute;
-  top: 18px;
-  right: 16px;
+  grid-column: 2;
+  grid-row: 1;
+  margin-top: 5px;
   color: var(--ink-500);
-  transition: transform var(--dur-2) var(--ease-out), color var(--dur-2);
+  transition:
+    transform var(--dur-2) var(--ease-out),
+    color var(--dur-2) var(--ease-out);
 }
-.tile:hover .arrow {
+.item:hover .name {
+  color: var(--blue-800);
+}
+.item:hover .arrow {
   color: var(--blue-800);
   transform: translate(2px, -2px);
 }
+
 .source {
-  margin-top: 14px;
+  margin-top: 20px;
   font-size: 12.5px;
   color: var(--ink-500);
 }

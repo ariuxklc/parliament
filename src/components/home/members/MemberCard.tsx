@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, type PointerEvent } from "react";
+import { useRef } from "react";
 import styles from "./members.module.css";
 import type { MemberSummary } from "@/lib/types";
 import { t } from "@/lib/i18n";
@@ -15,20 +15,11 @@ interface MemberCardProps {
 }
 
 /**
- * Compact roster card. Default state shows portrait, name, party and role.
- * On hover/focus it lifts, the portrait pushes in, a spotlight follows the pointer and the
- * committee line slides up — the "player card" moment. Neighbours recede via CSS `:has()`.
+ * Compact roster card: portrait, name, party, role. Hover only lifts it a little (and quietly warms the
+ * profile cache); pressing it opens the full card in a dialog.
  */
 export function MemberCard({ member: m, selected, index, onPreview, onSelect }: MemberCardProps) {
   const ref = useRef<HTMLButtonElement>(null);
-
-  const onMove = (e: PointerEvent<HTMLButtonElement>) => {
-    const el = ref.current;
-    if (!el || e.pointerType !== "mouse") return;
-    const r = el.getBoundingClientRect();
-    el.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`);
-    el.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`);
-  };
 
   return (
     <li className={styles.cardItem} style={{ ["--i" as string]: index }}>
@@ -37,10 +28,10 @@ export function MemberCard({ member: m, selected, index, onPreview, onSelect }: 
         type="button"
         className={styles.card}
         data-selected={selected}
-        aria-pressed={selected}
+        aria-haspopup="dialog"
+        aria-expanded={selected}
         aria-label={t.members.select(`${m.lastName} ${m.firstName}`)}
-        onPointerEnter={(e) => e.pointerType === "mouse" && onPreview(m)}
-        onPointerMove={onMove}
+        onPointerEnter={() => onPreview(m)}
         onFocus={() => onPreview(m)}
         onClick={() => onSelect(m)}
         style={{ ["--party" as string]: m.party?.color ?? "var(--ink-500)" }}
@@ -53,7 +44,6 @@ export function MemberCard({ member: m, selected, index, onPreview, onSelect }: 
               {m.firstName.charAt(0)}
             </span>
           )}
-          <span className={styles.spotlight} aria-hidden="true" />
           {m.roleShort ? (
             <span className={styles.roleChip} title={m.role ?? undefined}>
               {m.roleShort}
@@ -67,7 +57,6 @@ export function MemberCard({ member: m, selected, index, onPreview, onSelect }: 
             <span className={styles.partySwatch} aria-hidden="true" />
             {m.party?.name ?? "—"}
           </span>
-          {m.committees[0] ? <span className={styles.committeeLine}>{m.committees[0]}</span> : null}
         </span>
       </button>
     </li>

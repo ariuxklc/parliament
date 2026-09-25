@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import styles from "./opinion.module.css";
 import { formatNumber } from "@/lib/format";
 import { ArrowUpRight } from "../ui/icons";
@@ -19,7 +19,8 @@ const LABEL: Record<Choice, string> = { support: "Дэмжиж байна", oppo
  * One simple question. Results appear only after voting (so nobody is nudged by the count).
  * Anonymous, one vote per browser, changeable. Clearly not an official submission.
  */
-export function OpinionPoll({ billId, officialUrl }: { billId: number; officialUrl: string }) {
+export function OpinionPoll({ billId, officialUrl, compact = false }: { billId: number; officialUrl: string; compact?: boolean }) {
+  const titleId = `${useId()}-opinion`;
   const [data, setData] = useState<Totals | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,9 +57,9 @@ export function OpinionPoll({ billId, officialUrl }: { billId: number; officialU
   const pct = (n: number) => (data && data.total ? Math.round((n / data.total) * 100) : 0);
 
   return (
-    <section className={styles.poll} aria-labelledby="opinion-title" aria-busy={!data || busy}>
+    <section className={styles.poll} data-compact={compact} aria-labelledby={titleId} aria-busy={!data || busy}>
       <div className={styles.head}>
-        <h2 id="opinion-title">Та энэ төслийг дэмжиж байна уу?</h2>
+        <h2 id={titleId}>Та энэ төслийг дэмжиж байна уу?</h2>
         {!voted ? <p>Нэрээ үлдээх шаардлагагүй. Хариултаа дараа нь өөрчилж болно.</p> : null}
       </div>
 

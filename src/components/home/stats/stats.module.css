@@ -1,151 +1,76 @@
 .section {
   padding: var(--section-y) 0;
-  background: var(--surface);
+  background: var(--canvas);
 }
 
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 40px clamp(40px, 6vw, 96px);
+  align-items: center;
 }
 @media (max-width: 980px) {
   .grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
-.panel,
-.tile {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  padding: 24px;
-  transition:
-    border-color var(--dur-2) var(--ease-out),
-    box-shadow var(--dur-2) var(--ease-out),
-    transform var(--dur-2) var(--ease-out);
-}
-.tile:hover {
-  border-color: var(--blue-200);
-  box-shadow: var(--shadow-2);
-  transform: translate3d(0, -3px, 0);
-}
-.panelHead {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 4px 16px;
-}
-.panel h3,
-.tile h3 {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--blue-800);
-}
-.panelHead p {
-  font-size: 13.5px;
-  color: var(--ink-600);
-}
-.seatsPanel {
+.figures {
   display: grid;
-  gap: 16px;
+  margin: 0;
 }
-
-.tiles {
+.figure {
   display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 150px minmax(0, 1fr);
+  grid-template-areas:
+    "big label"
+    "big note";
+  align-items: end;
+  column-gap: 20px;
+  padding: 22px 0;
+  border-top: 1px solid var(--line-strong);
 }
-.tiles > :last-child {
-  grid-column: 1 / -1;
+.figure:last-child {
+  border-bottom: 1px solid var(--line-strong);
 }
-@media (max-width: 560px) {
-  .tiles {
-    grid-template-columns: 1fr;
-  }
-}
-.tile {
-  display: grid;
-  align-content: start;
-  gap: 10px;
-}
-.big {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 10px;
-  font-size: 44px;
-  line-height: 1;
-  font-weight: 800;
-  color: var(--blue-900);
-  letter-spacing: -0.02em;
-}
-.big > span:last-child:not(:first-child) {
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0;
-  color: var(--ink-600);
-}
-.ratio {
-  height: 8px;
-  border-radius: 8px;
-  background: var(--surface-2);
-  overflow: hidden;
-}
-.ratio span {
-  display: block;
-  height: 100%;
-  border-radius: 8px;
-  background: var(--blue-800);
-}
-.terms {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  height: 92px;
-}
-.terms li {
-  flex: 1;
-  display: grid;
-  justify-items: center;
-  align-content: end;
-  gap: 2px;
-  height: 100%;
-  font-size: 11.5px;
-  color: var(--ink-600);
-  text-align: center;
-}
-.terms strong {
-  font-size: 13px;
+.figure dt {
+  grid-area: label;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--ink-900);
 }
-.termBar {
-  width: 100%;
-  height: var(--h);
-  min-height: 3px;
-  max-height: 56px;
-  border-radius: 3px 3px 0 0;
-  background: var(--blue-100);
-  transition: background var(--dur-2);
+.big {
+  grid-area: big;
+  margin: 0;
+  font-size: clamp(40px, 4.4vw, 56px);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--blue-800);
+  font-variant-numeric: tabular-nums;
 }
-.terms li:first-child .termBar {
-  background: var(--blue-800);
-}
-.terms li:hover .termBar {
-  background: var(--gold-500);
-}
-.tileNote {
+.note {
+  grid-area: note;
+  align-self: start;
+  margin: 4px 0 0;
   font-size: 13.5px;
-  color: var(--ink-600);
   line-height: 1.5;
+  color: var(--ink-600);
 }
+@media (max-width: 480px) {
+  .figure {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "label" "big" "note";
+  }
+  .big {
+    margin: 8px 0 2px;
+  }
+}
+
 .source {
+  margin-top: 28px;
   font-size: 12.5px;
   color: var(--ink-500);
-  margin-top: auto;
 }
 
 /* ============================================================ Hemicycle */
@@ -213,61 +138,35 @@
 }
 
 .legend {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px 6px;
 }
 .legend button {
-  display: grid;
-  grid-template-columns: 26px minmax(0, 1fr) 36px minmax(60px, 140px);
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  text-align: left;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-pill);
   font-size: 14px;
   transition: background var(--dur-2) var(--ease-out);
 }
 .legend button:hover,
 .legend button[aria-pressed="true"] {
-  background: var(--surface-2);
-}
-.legendLogo {
-  width: 22px;
-  height: 22px;
-  object-fit: contain;
+  background: var(--surface);
 }
 .legendSwatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
   background: var(--party);
 }
 .legendName {
   font-weight: 600;
-  color: var(--ink-800);
+  color: var(--ink-700);
 }
 .legendSeats {
   font-weight: 800;
-  text-align: right;
-}
-.legendBar {
-  height: 6px;
-  border-radius: 6px;
-  background: var(--surface-2);
-  overflow: hidden;
-}
-.legendBar span {
-  display: block;
-  height: 100%;
-  background: var(--party);
-  border-radius: 6px;
-}
-@media (max-width: 480px) {
-  .legend button {
-    grid-template-columns: 26px minmax(0, 1fr) 36px;
-  }
-  .legendBar {
-    display: none;
-  }
+  color: var(--ink-900);
 }

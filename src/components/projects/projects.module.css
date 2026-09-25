@@ -1,0 +1,369 @@
+/* «Өргөн мэдүүлсэн төслүүд» pages — follows the /ask and /laws page header language. */
+.page {
+  padding-block: clamp(28px, 5vw, 64px) clamp(48px, 7vw, 96px);
+}
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--ink-600);
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+.crumbs a {
+  color: var(--blue-800);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--blue-800);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--gold-500);
+}
+/* identical to the /laws/{id} title (askPage.module.css), so both bill pages are one design */
+.title {
+  color: var(--blue-900);
+  font-size: clamp(30px, 4.6vw, 50px);
+  line-height: 1.1;
+  font-weight: 700;
+  margin: 10px 0 12px;
+  overflow-wrap: anywhere;
+}
+/* Two quiet lines under the title — same spec as /laws/{id} (askPage.module.css .metaLine).
+   Each item gets a "·" before it; the clip hides the one at the start of a wrapped row. */
+.metaLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  row-gap: 4px;
+  margin-left: -19px;
+  clip-path: inset(-8px -8px -8px 19px);
+  color: var(--ink-600);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.metaLine > * {
+  position: relative;
+  margin-left: 19px;
+}
+.metaLine > *::before {
+  content: "·";
+  position: absolute;
+  left: -12px;
+  color: var(--ink-500);
+}
+.metaLine a {
+  color: var(--blue-800);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.metaLineSmall {
+  margin-top: 2px;
+  font-size: 13.5px;
+}
+.stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--blue-800);
+  font-weight: 700;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.lede {
+  max-width: 72ch;
+  color: var(--ink-700);
+  font-size: clamp(16px, 1.6vw, 18px);
+  line-height: 1.55;
+}
+.sourceLine {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink-500);
+}
+.sourceLine a {
+  color: var(--blue-800);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.staleNote {
+  margin-top: 12px;
+  font-size: 13.5px;
+  color: #7a3b00;
+  background: #fff4e5;
+  border: 1px solid #f5d7a8;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  width: fit-content;
+}
+
+/* ------------------------------------------------------------ detail meta */
+
+/* brief not yet generated */
+.pending {
+  display: grid;
+  gap: 6px;
+  margin: 16px 0 8px;
+  padding: 18px 22px;
+  background: var(--surface);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-md);
+}
+.pending h2 {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-600);
+}
+.pending p {
+  font-size: 14.5px;
+  color: var(--ink-700);
+  max-width: 75ch;
+}
+
+/* main column + 320px aside, as on /laws/{id} (documents take the chat's place) */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 28px;
+  align-items: start;
+  margin-top: 28px;
+}
+.aside {
+  display: grid;
+  gap: 16px;
+}
+.layout[data-single="true"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ------------------------------------------------------------ listing */
+.browser {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 0;
+  background: var(--canvas);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink-600);
+}
+.field:focus-within {
+  border-color: var(--blue-800);
+}
+.field select,
+.field input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  min-height: 40px;
+  font-size: 14px;
+  color: var(--ink-900);
+}
+.field select {
+  cursor: pointer;
+  max-width: 220px;
+}
+.searchField {
+  flex: 1 1 260px;
+}
+.searchField input {
+  width: 100%;
+}
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  background: #fff8dc;
+  border: 1px solid #f3dc8a;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gold-800);
+  cursor: pointer;
+}
+.toggle input {
+  accent-color: var(--blue-800);
+  width: 16px;
+  height: 16px;
+}
+.toggle b {
+  margin-left: 2px;
+}
+
+.count {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  font-size: 14px;
+  color: var(--ink-600);
+}
+.count strong {
+  color: var(--ink-900);
+  font-size: 18px;
+}
+.reset {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--blue-800);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 40px;
+}
+.card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20px;
+  align-content: start;
+  gap: 6px 16px;
+  padding: 18px 0 20px;
+  border-bottom: 1px solid var(--line);
+}
+.cardTitle {
+  grid-column: 1;
+  font-size: 16.5px;
+  line-height: 1.42;
+  font-weight: 600;
+  color: var(--ink-900);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cardTitle a {
+  transition: color var(--dur-2) var(--ease-out);
+}
+/* whole row is the link target */
+.cardTitle a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.card:hover .cardTitle a {
+  color: var(--blue-800);
+}
+.cardTitle a:focus-visible {
+  outline: none;
+}
+.card:has(a:focus-visible) {
+  outline: 3px solid var(--gold-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.cardMeta {
+  grid-column: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  font-size: 13.5px;
+  color: var(--ink-500);
+}
+.cardMeta time {
+  font-variant-numeric: tabular-nums;
+}
+.aiTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--gold-800);
+}
+.aiTag::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold-500);
+}
+.cardArrow {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+  margin-top: 4px;
+  color: var(--ink-500);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity var(--dur-2) var(--ease-out),
+    transform var(--dur-2) var(--ease-out);
+}
+.card:hover .cardArrow {
+  opacity: 1;
+  transform: none;
+  color: var(--blue-800);
+}
+.more {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+@media (max-width: 860px) {
+  .list {
+    grid-template-columns: 1fr;
+  }
+  .toolbar {
+    position: static;
+  }
+  .field {
+    flex: 1 1 140px;
+  }
+  .field select {
+    max-width: none;
+    width: 100%;
+  }
+}

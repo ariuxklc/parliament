@@ -1,0 +1,533 @@
+/* Хийморь — messenger-style assistant in the corner. */
+.dock {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 60;
+}
+
+/* ------------------------------------------------------------ launcher: the mascot in a blue coin */
+.launcher {
+  position: relative;
+  display: block;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  background: var(--blue-800);
+  box-shadow:
+    0 0 0 3px #fff,
+    0 12px 28px -10px rgba(6, 26, 74, 0.6);
+  transition:
+    transform var(--dur-3) var(--ease-out),
+    opacity var(--dur-2) var(--ease-out),
+    box-shadow var(--dur-2) var(--ease-out);
+}
+.launcherSprite {
+  position: absolute;
+  left: -2px;
+  bottom: 2px;
+  /* the ears pop out over the rim */
+  transform-origin: 50% 90%;
+  transition: transform var(--dur-3) var(--ease-out);
+}
+.launcher:hover .launcherSprite,
+.launcher:focus-visible .launcherSprite {
+  transform: rotate(-7deg) translateY(-3px);
+}
+.launcher:hover {
+  box-shadow:
+    0 0 0 3px var(--gold-500),
+    0 14px 30px -10px rgba(6, 26, 74, 0.65);
+}
+.launcher[data-open="true"] {
+  transform: scale(0.4);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------ first-visit hello */
+.hello {
+  position: absolute;
+  right: 80px;
+  bottom: 14px;
+  width: max-content;
+  max-width: min(250px, calc(100vw - 120px));
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 11px 8px 11px 14px;
+  border-radius: 16px 16px 4px 16px;
+  background: #fff;
+  color: var(--ink-900);
+  box-shadow:
+    0 10px 30px -12px rgba(6, 26, 74, 0.45),
+    0 0 0 1px var(--line);
+  animation: helloIn 420ms var(--ease-out) both;
+}
+@keyframes helloIn {
+  from {
+    opacity: 0;
+    transform: translate3d(8px, 6px, 0) scale(0.96);
+  }
+}
+.helloText {
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.helloClose {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: var(--ink-500);
+}
+.helloClose:hover {
+  background: var(--surface-2);
+  color: var(--ink-900);
+}
+
+/* ------------------------------------------------------------ panel */
+.panel {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 384px;
+  height: min(640px, calc(100dvh - 40px));
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #f3f5f9;
+  box-shadow:
+    0 28px 70px -24px rgba(6, 26, 74, 0.55),
+    0 2px 10px rgba(6, 26, 74, 0.12);
+  transform-origin: 90% 100%;
+  transition:
+    transform 320ms var(--ease-out),
+    opacity 220ms var(--ease-out),
+    visibility 0s linear 0s;
+}
+.panel[data-open="false"] {
+  opacity: 0;
+  visibility: hidden;
+  transform: translate3d(0, 18px, 0) scale(0.94);
+  pointer-events: none;
+  transition:
+    transform 240ms var(--ease-in-out),
+    opacity 180ms var(--ease-out),
+    visibility 0s linear 240ms;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 10px 12px 14px;
+  background: var(--blue-800);
+  color: #fff;
+}
+.avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #fff;
+}
+.avatar > span:first-child {
+  border-radius: 50%;
+}
+.online {
+  position: absolute;
+  right: 0;
+  bottom: 1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #34c27a;
+  box-shadow: 0 0 0 2px var(--blue-800);
+}
+.who {
+  min-width: 0;
+}
+.who h2 {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.who p {
+  font-size: 12.5px;
+  color: var(--blue-100);
+}
+.headActions {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+.headActions > * {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #fff;
+  transition: background var(--dur-1) var(--ease-out);
+}
+.headActions > *:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.headActions > *:disabled {
+  opacity: 0.5;
+}
+
+/* ------------------------------------------------------------ messages */
+.list {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 14px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.intro {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 6px 18px 12px;
+  text-align: center;
+}
+.intro > span:first-child {
+  margin-bottom: 4px;
+  border-radius: 50%;
+  background-color: var(--blue-800);
+}
+.intro p {
+  font-size: 14px;
+  color: var(--ink-800);
+}
+.intro small {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-500);
+}
+
+.row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  animation: msgIn 260ms var(--ease-out) both;
+}
+@keyframes msgIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+}
+.row[data-from="me"] {
+  justify-content: flex-end;
+}
+.rowAvatar {
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.bubble {
+  max-width: 82%;
+  padding: 9px 13px;
+  border-radius: 18px 18px 18px 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-900);
+  overflow-wrap: anywhere;
+}
+.row[data-from="me"] .bubble {
+  border-radius: 18px 18px 6px 18px;
+  background: var(--blue-800);
+  border-color: var(--blue-800);
+  color: #fff;
+  white-space: pre-wrap;
+}
+
+.answer {
+  max-width: calc(100% - 38px);
+}
+.answerText {
+  display: grid;
+  gap: 8px;
+}
+.answerText ul {
+  list-style: disc;
+  padding-left: 18px;
+}
+.answerText ol {
+  list-style: decimal;
+  padding-left: 20px;
+}
+.answerText li + li {
+  margin-top: 3px;
+}
+.caution {
+  margin-top: 8px;
+  padding-left: 8px;
+  border-left: 2px solid var(--line-strong);
+  font-size: 12.5px;
+  color: var(--ink-600);
+}
+.answerFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.sources summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--blue-800);
+  cursor: pointer;
+  list-style: none;
+}
+.sources summary::-webkit-details-marker {
+  display: none;
+}
+.sources summary svg {
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.sources[open] {
+  order: 2;
+  flex-basis: 100%;
+}
+.sources[open] summary svg {
+  transform: rotate(180deg);
+}
+.sources ol {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.sources a {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ink-800);
+}
+.sources a:hover span:last-of-type {
+  color: var(--blue-800);
+  text-decoration: underline;
+}
+.sources small {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-500);
+}
+.sourceN {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: var(--radius-xs);
+  background: var(--blue-100);
+  color: var(--blue-800);
+  font-size: 11px;
+  font-weight: 800;
+}
+.copy {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-500);
+}
+.copy:hover {
+  color: var(--blue-800);
+}
+
+/* typing: three dots and what is being looked up */
+.typing {
+  display: inline-flex;
+  gap: 5px;
+  padding: 13px 15px;
+}
+.typing span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-500);
+  animation: dot 1.1s var(--ease-in-out) infinite;
+}
+.typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes dot {
+  0%,
+  60%,
+  100% {
+    transform: none;
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+.statusLine {
+  max-width: 260px;
+  margin: 5px 0 0 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ink-500);
+}
+
+.errorBubble {
+  display: grid;
+  gap: 8px;
+  background: #fff6f6;
+  border-color: #f1c9cd;
+}
+.errorBubble button {
+  justify-self: start;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-800);
+}
+
+/* quick replies */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-left: 38px;
+}
+.chips button {
+  padding: 7px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--blue-200);
+  background: #fff;
+  color: var(--blue-800);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: left;
+  transition:
+    background var(--dur-1) var(--ease-out),
+    border-color var(--dur-1) var(--ease-out);
+}
+.chips button:hover {
+  background: var(--blue-50);
+  border-color: var(--blue-800);
+}
+.chips button:disabled {
+  opacity: 0.5;
+}
+
+/* ------------------------------------------------------------ composer */
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px 6px;
+  background: #fff;
+  border-top: 1px solid var(--line);
+}
+.composer textarea {
+  flex: 1;
+  min-width: 0;
+  max-height: 112px;
+  resize: none;
+  border: 0;
+  outline: 0;
+  border-radius: 20px;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  font-size: 14.5px;
+  line-height: 1.4;
+  color: var(--ink-900);
+  transition: box-shadow var(--dur-1) var(--ease-out);
+}
+.composer textarea:focus {
+  box-shadow: inset 0 0 0 2px var(--blue-200);
+}
+.composer textarea::placeholder {
+  color: var(--ink-500);
+}
+.send {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--blue-800);
+  color: #fff;
+  transition:
+    background var(--dur-1) var(--ease-out),
+    transform var(--dur-1) var(--ease-out);
+}
+.send:hover:not(:disabled) {
+  background: var(--blue-700);
+}
+.send:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.send:disabled {
+  background: var(--line);
+  color: var(--ink-500);
+  cursor: default;
+}
+.fineprint {
+  padding: 2px 12px 10px;
+  background: #fff;
+  font-size: 11px;
+  text-align: center;
+  color: var(--ink-500);
+}
+
+/* ------------------------------------------------------------ phones: full screen */
+@media (max-width: 560px) {
+  .dock {
+    right: 14px;
+    bottom: 14px;
+  }
+  .launcher {
+    width: 60px;
+    height: 60px;
+  }
+  .launcherSprite {
+    width: 68px !important;
+    height: 68px !important;
+  }
+  .hello {
+    right: 72px;
+  }
+  .panel {
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

@@ -1,15 +1,15 @@
 import "server-only";
-import type { ChatAnswer } from "./types";
 
 /**
  * Single-process abuse and cost guards for the hackathon demo. A multi-instance deployment needs a
- * shared store (KV/Redis) for these counters. No question text is kept except in the short answer cache.
+ * shared store (KV/Redis) for these counters. No question text is kept.
  */
 
 const PER_MINUTE = 8;
 const PER_HOUR = 60;
 const DAILY_REQUESTS = 1_500;
-const DAILY_MODEL_CALLS = 500;
+// Each question takes 2–6 model rounds (tool use), so the budget counts rounds.
+const DAILY_MODEL_CALLS = 2_000;
 
 type Window = { count: number; resetAt: number };
 const minute = new Map<string, Window>();
@@ -48,31 +48,10 @@ export function admitChatRequest(ip: string, client: string, now = Date.now()): 
   return { ok: true, release: () => active.delete(key) };
 }
 
-/** Separate budget for paid model calls; direct data answers do not consume it. */
+/** Budget for paid model rounds across all users. */
 export function allowModelCall(now = Date.now()): boolean {
   rollDay(now);
   if (daily.modelCalls >= DAILY_MODEL_CALLS) return false;
   daily.modelCalls++;
   return true;
-}
-
-/* ------------------------------------------------------------ answer cache */
-
-const CACHE_TTL = 10 * 60_000;
-const CACHE_MAX = 300;
-const cache = new Map<string, { value: ChatAnswer; expires: number }>();
-
-export function cachedAnswer(key: string, now = Date.now()): ChatAnswer | undefined {
-  const hitValue = cache.get(key);
-  if (!hitValue) return undefined;
-  if (hitValue.expires <= now) {
-    cache.delete(key);
-    return undefined;
-  }
-  return hitValue.value;
-}
-
-export function storeAnswer(key: string, value: ChatAnswer, now = Date.now()) {
-  cache.set(key, { value, expires: now + CACHE_TTL });
-  while (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value!);
 }

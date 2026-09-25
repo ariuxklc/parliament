@@ -111,53 +111,122 @@
   color: var(--ink-on-dark);
 }
 
-/* bill page */
-.meta {
+/* bill page: quiet meta lines under the title.
+   Separators sit in each item's left margin; the container is shifted left by that margin and clipped,
+   so a wrapped row never starts with a stray "·". */
+.metaBlock {
+  display: grid;
+  gap: 4px;
+  margin: 2px 0 22px;
+}
+.metaLine {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 4px 0 16px;
+  align-items: baseline;
+  row-gap: 4px;
+  margin-left: -19px;
+  clip-path: inset(-8px -8px -8px 19px);
+  color: var(--ink-600);
+  font-size: 14px;
+  line-height: 1.5;
 }
-.chip {
+.metaLine > * {
+  position: relative;
+  margin-left: 19px;
+}
+.metaLine > *::before {
+  content: "·";
+  position: absolute;
+  left: -12px;
+  color: var(--ink-500);
+}
+.metaSub {
+  font-size: 13.5px;
+}
+.metaLine a {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  color: var(--ink-700);
-  font-size: 13px;
-  font-weight: 600;
-}
-.chipStage {
-  background: var(--blue-50);
-  border-color: var(--blue-200);
-  color: var(--blue-800);
-}
-.officialLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  gap: 3px;
   color: var(--blue-800);
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.stages {
-  display: grid;
-  gap: 8px;
-  padding: 0;
-  margin: 0;
+.stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--blue-800);
+  font-weight: 700;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.stage[data-stage="drafting"] {
+  color: var(--gold-800);
+}
+
+/* bill page: collapsed aside cards (site-wide "Дэлгэрэнгүй" / "Хураах") */
+.fold > summary,
+.linkRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.fold > summary {
+  cursor: pointer;
   list-style: none;
 }
-.stages li {
-  padding-left: 14px;
+.fold > summary::-webkit-details-marker {
+  display: none;
 }
-.stages small {
-  display: block;
+.fold[open] > summary {
+  margin-bottom: 12px;
+}
+.foldTitle {
+  color: var(--blue-900);
+  font-size: 15px;
+  font-weight: 700;
+}
+.foldCount {
   color: var(--ink-500);
-  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.foldToggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 3px;
+  color: var(--blue-800);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.foldToggle svg {
+  flex-shrink: 0;
+}
+.fold > summary:hover .foldToggle > span,
+.linkRow:hover .foldToggle {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.fold svg {
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.fold[open] svg {
+  transform: rotate(180deg);
+}
+.fold[open] .whenClosed,
+.fold:not([open]) .whenOpen {
+  display: none;
+}
+.card.linkRow {
+  text-decoration: none;
 }
 .outline {
   max-height: 320px;

@@ -1,0 +1,32 @@
+{
+  "_howto": "Homepage reel player, shown in this order. kind: \"file\" (public/videos/…, best: autoplays and advances by itself), \"youtube\" (Shorts link), or \"instagram\" (reel link). A \"file\" entry whose file is missing is skipped. billId adds a link to /laws/{billId}. Entries marked test: true are placeholders from public Instagram accounts; replace them with the team's own bill videos.",
+  "reels": [
+    {
+      "kind": "file",
+      "src": "/videos/11151.mp4",
+      "title": "Өгөгдлийн тухай хууль — 30 секундэд",
+      "billId": 11151
+    },
+    {
+      "kind": "instagram",
+      "src": "https://www.instagram.com/reel/DNAVsgWT2Wn/",
+      "title": "2025 оны хаврын ээлжит чуулганы хуралдааны тойм",
+      "source": "@mongolianparliament",
+      "test": true
+    },
+    {
+      "kind": "instagram",
+      "src": "https://www.instagram.com/reel/DW4Bc2zAYMs/",
+      "title": "Өмч хувьчлалын эрх зүйн орчны тухай — УИХ-ын гишүүн О.Номинчимэг",
+      "source": "@urug_mn",
+      "test": true
+    },
+    {
+      "kind": "instagram",
+      "src": "https://www.instagram.com/reel/DXL1xWuAQKq/",
+      "title": "Улсын Их Хурлын эмэгтэй гишүүд",
+      "source": "@newsroommongolia",
+      "test": true
+    }
+  ]
+}

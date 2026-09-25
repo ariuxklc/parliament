@@ -29,13 +29,32 @@ Run locally: `npm install && npm run dev` → http://localhost:3000 (needs `.env
 
 ---
 
-## 2. Homepage structure
+## 2. Homepage structure (minimal redesign, 2026-09-25)
 
-`Header (official menu) → Sticky section nav → Hero (current session + 3 live tiles) → Хуралдааны тов (schedule columns, latest votes, bill bulletin) → Хуулийн төслүүд (time browser) → Гишүүд (roster + showcase) → Тоон мэдээлэл → Мэдээ → Footer (source statement)`
+`Header (official menu) → Sticky section nav → Hero (session in one line + reels) → Хуралдааны тов (the week: date + what meets; 3 latest votes) → Хуулийн төслүүд (years, sessions, list; entry to /projects) → Нийтийн өргөдөл → Гишүүд → Байнгын хороод → Их Хурал тоогоор → Мэдээ → Footer`
 
-Ordering follows the brief's comprehension order: what is happening now → which laws are active → who the members are → how to explore further.
+Why (feedback from Ariuka's reviewers): too much text and too many boxes for an average visitor. Each section now shows one idea at a glance; detail is one click away (a day in the schedule opens its meetings; a bill opens its page).
 
----
+Removed from the homepage: the three hero tiles (replaced by the reels; the latest plenary is one quiet line), the "30 секундын AI тайлбар" teaser (it lives on each bill page only), the bulletin + per-committee bars, the 10-stage strip above the bill list (each bill page has its own journey) and the plenary agenda side panel ("Нэгдсэн хуралдаанаар хэлэлцсэн асуудал").
+
+### Reels (hero)
+
+`src/components/home/hero/ReelStack.tsx`, list in `data/reels.json` (loader `src/lib/reels.ts`). Cards are stacked like photos held in one hand; the top one plays, the next two wait behind it, moving on sends the top card off to the left. Segmented progress bar, pause button, arrows, swipe, ←/→ keys.
+
+- Add a video: put `public/videos/<name>.mp4` and add `{ "kind": "file", "src": "/videos/<name>.mp4", "title": "…", "billId": 11151 }` (billId adds "Төслийг үзэх →"). Files autoplay muted and advance when they end. A missing file is skipped, so the 11151 entry already waits for `public/videos/11151.mp4`.
+- Also accepted: `"kind": "youtube"` (Shorts link, autoplays muted) and `"kind": "instagram"` (reel link). Embeds cannot report their end, so they advance after `seconds` (default 10), unless the visitor hovers, clicks into the video, presses pause or scrolls away. Only these three kinds are accepted, each rebuilt into a fixed embed URL.
+- Test entries (`"test": true`) are public Instagram reels (@mongolianparliament, @urug_mn, @newsroommongolia) standing in until the team's own videos exist. Instagram embeds load Instagram's scripts and show its header — fine for testing, replace for the demo.
+- Reduced motion: starts paused; nothing moves unless the visitor asks.
+
+### Chat in the corner (Хийморь)
+
+`src/components/assistant/ChatDock.tsx` (+ `Mascot.tsx`, `chatDock.module.css`), mounted in `src/app/layout.tsx`, replaces the old floating launcher. A messenger-style panel for Ask Parliament AI: mascot launcher with a one-time hello, blue header with the mascot's live face, bot/user bubbles, quick-reply chips (starters, then follow-ups), typing dots with the current lookup, answers with numbered citations, a folded source list and "Хуулбарлах". Same `/api/chat` protocol and the same sessionStorage conversation as the full chat on `/ask`. Hidden on `/ask` and `/laws/*`, which embed the chat. Full screen on phones.
+
+Mascot sprites: `public/images/mascot/horse-bust.webp` (launcher) and `horse-head.webp` (avatars), both 4 × 6 frames cut from Ariuka's sheet (256 px cells; bust = cell crop x16 y4 240², head = x92 y6 160²). Moods (frame numbers in `Mascot.tsx`): idle 0 with a blink (2) every few seconds, listening 5 while typing, looking up 8/9/13/10 while the answer is prepared, laugh 14 when it arrives, worried 21 on errors, greeting 17 on hover.
+
+### Readable titles
+
+LawForum, petitions and Цахим парламент titles often arrive in ALL CAPS. `src/lib/text/readable.ts` → `readableTitle()` turns shouting chunks into sentence case for display only (acronyms such as УИХ, ХК kept; "Монгол Улс", "Улсын Их Хурал" re-capitalised; parenthesised and /slash/ notes judged separately). Used on the homepage rows, /laws and /projects.
 
 ## 3. Data map — component → endpoint → fields
 
@@ -86,16 +105,14 @@ URL state: `/?year=2025&session=2025-fall&stage=submitted&type=1&sort=oldest&q=�
 
 ## 4. Design system
 
-- **Identity kept from new.parliament.mn:** primary blue `#00379B`, gold `#FFC700`, canvas `#ECEDEF`, ink `#1A1A1A`, State Emblem + two-line uppercase wordmark, red–blue–red flag stripe under the header, uppercase blue section titles with a gold ornament rule, pill quick-links (now a sticky section nav), official photography (State Palace aerial from the organizers' deck).
-- **Type:** Golos Text (open licence, full Mongolian Cyrillic) standing in for SF Pro Display, which cannot be redistributed. Uppercase only for section titles/labels.
-- **Grid:** 1320 px max container, fluid gutters (16–40 px), section rhythm `clamp(64px, 8vw, 112px)`.
-- **Radii:** 6 / 10 / 16 px; pills for filters (as on the official site). Shadows are low and blue-tinted.
-- **Motion:** 150 / 260 / 440 / 720 ms, ease-out `cubic-bezier(.22,.8,.24,1)`. Transform + opacity only. One shared IntersectionObserver for reveals, one rAF scroll loop for parallax (hero photo, emblem watermark, lead news image; max drift 36–110 px). `prefers-reduced-motion` disables parallax, reveals, count-ups and smooth scroll. Content is only hidden for reveal when JS is running.
-- **Hover language:** "highlight one, the rest step back" — cards lift 3–6 px with a gold/party rule; neighbours fade (`:has()`); schedule days widen while others compress; the year rail and journey steps respond on hover and keyboard focus.
-- **Members:** the roster is a set of player cards (portrait, name, party, short role). Hover/focus lifts the card, pushes the portrait in, a spotlight follows the pointer and the committee line slides up; the side showcase animates to the full profile (constituency, committees, attendance with official status labels). On touch devices the committee line is always visible and tapping opens a bottom sheet.
-- **Mobile:** single column, schedule becomes an accordion, rails/tabs scroll horizontally, member grid 2-up, no hover-only information.
-
----
+- **Palette (new.parliament.mn):** primary blue `#00379B`, deep blue `#0A2466` (hero, footer), gold `#FFC700` used only as an accent (ornament, active underline, open-session dot, plenary days), canvas `#ECEDEF` alternating with white sections. No gradients except the photo shade.
+- **Identity:** State Emblem + wordmark, red–blue–red flag stripe, the gold two-segment ornament above section titles (sentence case now, not uppercase), official photography (State Palace aerial) and a thin traditional key-pattern band (`.meander` in `globals.css`) on the hero's bottom edge and the footer's top edge.
+- **Type:** Golos Text. Titles 800 weight, body 15–17 px; long official titles are shown in sentence case (see §2).
+- **Minimal rules:** lists with hairline dividers instead of card boxes; one line of meta per item; counts in muted small type; one source line per section; selects and filters as quiet text controls; no chips with logos.
+- **Grid:** 1320 px max container, fluid gutters (16–40 px), section rhythm `clamp(56px, 7vw, 96px)`.
+- **Motion:** transform + opacity only; reels (card stack), row entrances when the period changes, member card lift with neighbours stepping back, hero photo parallax. `prefers-reduced-motion` stops parallax, reveals, count-ups and the reels' auto-advance.
+- **Members:** light cards (portrait, name, party, role label), 6 across on desktop. Hover only lifts a card a little; pressing a person opens their full card in a dialog (centred on desktop, bottom sheet on phones). No side panel that changes while the pointer moves.
+- **Mobile:** single column, schedule days become rows (date left, meetings right), year/session/stage tabs scroll sideways, reels centred under the copy with arrows on the card edges, no hover-only information.
 
 ## 5. Bill page integration (2026-09-25)
 
@@ -107,14 +124,17 @@ URL state: `/?year=2025&session=2025-fall&stage=submitted&type=1&sort=oldest&q=�
 
 | Feature | Where | How it works |
 | --- | --- | --- |
-| **30 секундэд** summary + **Энэ танд хамаатай юу?** | bill page (top), homepage block after the hero | Drafted by the AI model (`OPENAI_MODEL`, gpt-6-luna) from the official LawForum clauses (`src/lib/summaries/generate.ts`). The server keeps only sentences that cite a given clause and whose numbers appear in it. Saved as a **draft**; shown publicly only after a person approves it on `/review`. Each sentence links to its clause. |
-| Human review | `/review` (not linked publicly; dev mode or `REVIEW_TOKEN`) | Generate → edit next to the source clauses → tick "checked against sources" + name → approve. Unpublish at any time. |
-| Video | bill page card + homepage block | Upload MP4/WebM/MOV (≤250 MB) or paste a YouTube/other link in `/review`. Hidden until set. |
+| **AI товч тайлбар** (summary + **Энэ танд хамаатай юу?**) | bill page only: directly under the 10-stage journey (summary first, the rest behind "Дэлгэрэнгүй"). Removed from the homepage in the minimal redesign. **Fallback only**: the submitted-projects session's document-based brief replaces it in the same slot where available (see §6 note) | Written automatically by the AI model (`OPENAI_MODEL`, gpt-6-luna) the first time a bill page is opened (~6–10 s, skeleton shown), then cached in `data/summaries/<id>.json` for 30 days. Built only from the official LawForum clauses; the server keeps only sentences that cite a given clause and whose numbers appear in it. Labeled **"AI · хүн хянаагүй"**; each sentence links to its clause. Limits: 6 new summaries per visitor / 10 min, 300 per day, one model call per bill at a time. The homepage never triggers generation. |
+| Video | homepage reels (`data/reels.json`) + inside the bill's AI box | No tool: put `public/videos/<billId>.mp4` (or `.webm`), or add `{ "<billId>": "https://youtube.com/…" }` to `data/videos.json`. Hidden until present. |
 | Support / oppose | bill page, under the journey | Anonymous (random httpOnly cookie, stored only as a hash), one vote per browser per bill, changeable. Results only after voting; bar only from 10 votes. Labeled "not official, not representative" with a link to LawForum's official comments. |
 | Нийтийн өргөдөл | homepage (`#orgodol`) | 4 most-supported petitions from petition.parliament.mn (HTML feed; petitioner names/photos deliberately not shown). |
 | Байнгын хороод | homepage (`#horoo`) | 8 standing committees with chair and member count from the official member list. |
 
-Storage (laptop demo): `data/summaries/*.json` (explainers, can be committed), `data/opinions.json` and `data/videos/` (git-ignored). An online deployment needs a database instead of these files.
+Storage (laptop demo): `data/summaries/*.json` (cached AI summaries, can be committed), `data/opinions.json` (git-ignored). An online deployment needs a database instead of these files.
+
+Split agreed with the "Legislative projects browser feature" session (2026-09-25): it owns `/projects`, document discovery/extraction and the document-based AI brief (`src/lib/project-summaries/`, `src/components/projects/`); this area owns `/laws/{id}` placement. Its cached brief (`getProjectBriefByLawforumId`) will be rendered in the slot under the journey, with `src/lib/summaries` as the fallback. `BillJourney` accepts optional `model`/`sourceNote` for its pages.
+
+Decision (2026-09-25, Ariuka): no internal review tool for the demo — summaries are published automatically and labeled as unreviewed AI output. The team doc's P0 "human review before publishing" is therefore not enforced; the `status: "approved"` flag still exists if review is added later.
 
 ## 7. Open items / TODO
 

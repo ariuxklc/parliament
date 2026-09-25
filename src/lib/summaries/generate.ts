@@ -7,10 +7,10 @@ import type { BillExplainer, ImpactPoint, SourcePassage, SummaryPoint } from "./
 import { getExplainer, saveExplainer } from "./store";
 
 /**
- * Drafts a plain-language explainer for one bill with the project's model (OPENAI_MODEL, "gpt-6-luna").
+ * Writes a plain-language explainer for one bill with the project's model (OPENAI_MODEL, "gpt-6-luna").
  * The model sees only the bill title/type and numbered passages of the official LawForum text — no URLs,
  * no tools. The server then keeps only statements that cite given passages and whose numbers appear in
- * those passages. The result is saved as a DRAFT; a person must approve it in /review before it is public.
+ * those passages. Cached in data/summaries/<billId>.json and shown labeled as AI-generated.
  */
 
 export class ExplainerError extends Error {
@@ -145,7 +145,7 @@ export async function generateExplainer(billId: number): Promise<BillExplainer> 
   const bill = (await parliamentData.bills()).find((b) => b.id === billId);
   if (!bill) throw new ExplainerError(404, "LawForum-д ийм дугаартай төсөл олдсонгүй.");
   const doc = await parliamentData.billDocument(bill);
-  if (!doc?.clauses.length) throw new ExplainerError(422, "Төслийн эх бичвэрийг LawForum-аас уншиж чадсангүй.");
+  if (!doc?.clauses.length) throw new ExplainerError(422, "Энэ төслийн эх бичвэр LawForum дээр зөвхөн хавсралт файл хэлбэрээр байгаа тул 30 секундын AI тайлбар одоогоор бэлэн биш байна.");
 
   const passages = selectPassages(doc.clauses);
   if (passages.length < 2) throw new ExplainerError(422, "Тайлбар бэлтгэхэд хангалттай эх бичвэр алга.");
@@ -163,22 +163,57 @@ export async function generateExplainer(billId: number): Promise<BillExplainer> 
 
   const usedRefs = new Set([...summary, ...impact].flatMap((p) => p.refs));
   const now = new Date().toISOString();
-  const previous = await getExplainer(billId);
-  const saved = await saveExplainer(billId, () => ({
+  await saveExplainer(billId, {
     billId,
     billTitle: bill.title,
     billUrl: bill.url,
-    status: "draft", // never auto-published
+    status: "ai", // generated automatically — the UI labels it "AI · хүн хянаагүй"
     summary,
     impact,
     sources: passages.filter((p) => usedRefs.has(p.ref)),
-    video: previous?.video ?? null,
+    video: null,
     generatedAt: now,
     model: process.env.OPENAI_MODEL?.trim() || "gpt-6-luna",
-    editedByReviewer: false,
-    reviewedBy: null,
     approvedAt: null,
     updatedAt: now,
-  }));
-  return saved!;
+  });
+  return (await getExplainer(billId))!;
+}
+
+/* ------------------------------------------------------------------ on-demand, with limits */
+
+const FRESH_MS = 30 * 24 * 3600 * 1000; // regenerate after 30 days
+const PER_CLIENT = { max: 30, windowMs: 10 * 60_000 }; // new generations per visitor (high enough for a live demo run)
+const PER_DAY = 300; // new generations per server per day
+
+const inflight = new Map<number, Promise<BillExplainer>>();
+const clientHits = new Map<string, number[]>();
+let day = { key: "", count: 0 };
+
+function admit(clientKey: string): void {
+  const now = Date.now();
+  const recent = (clientHits.get(clientKey) ?? []).filter((t) => now - t < PER_CLIENT.windowMs);
+  if (recent.length >= PER_CLIENT.max) throw new ExplainerError(429, "Хэт олон хүсэлт. Хэсэг хугацааны дараа дахин оролдоно уу.");
+  const today = new Date().toISOString().slice(0, 10);
+  if (day.key !== today) day = { key: today, count: 0 };
+  if (day.count >= PER_DAY) throw new ExplainerError(503, "Өнөөдрийн AI тайлбарын хязгаар дууссан.");
+  recent.push(now);
+  clientHits.set(clientKey, recent);
+  day.count++;
+}
+
+/**
+ * Cached explainer, or generate one now (bill page, first visit). Concurrent requests for the same bill
+ * share one model call; cached reads are free and unlimited.
+ */
+export async function getOrCreateExplainer(billId: number, clientKey: string): Promise<BillExplainer> {
+  const cached = await getExplainer(billId);
+  const fresh = cached?.generatedAt && Date.now() - Date.parse(cached.generatedAt) < FRESH_MS;
+  if (cached && (fresh || cached.status === "approved")) return cached;
+  const running = inflight.get(billId);
+  if (running) return running;
+  admit(clientKey);
+  const p = generateExplainer(billId).finally(() => inflight.delete(billId));
+  inflight.set(billId, p);
+  return p;
 }

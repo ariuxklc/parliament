@@ -1,0 +1,339 @@
+.panel {
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.video {
+  margin: -4px -6px 4px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.head h2 {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink-900);
+}
+.badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: #fff4cc;
+  color: var(--gold-800);
+}
+.badge[data-reviewed="true"] {
+  background: #e8f4ec;
+  color: #1d6b3a;
+}
+
+.loading {
+  display: grid;
+  gap: 8px;
+}
+.line,
+.lineShort {
+  display: block;
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--line), #eef0f4, var(--line));
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+.lineShort {
+  width: 60%;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+.loadingText {
+  font-size: 12.5px;
+  color: var(--ink-500);
+}
+.error {
+  font-size: 13.5px;
+  color: var(--ink-600);
+}
+
+.body {
+  display: grid;
+  gap: 12px;
+}
+.summary {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink-800);
+}
+/* collapsed: first three lines with a soft fade, like a video description */
+.panel[data-open="false"] .summary {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  mask-image: linear-gradient(180deg, #000 60%, transparent);
+}
+
+.cites {
+  display: inline-flex;
+  gap: 3px;
+  vertical-align: 1px;
+}
+.cites a {
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--blue-50);
+  color: var(--blue-800);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 17px;
+  font-variant-numeric: tabular-nums;
+}
+.cites a:hover,
+.cites a:focus-visible {
+  background: var(--blue-100);
+}
+
+.impact {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  animation: in var(--dur-3) var(--ease-out) both;
+}
+@keyframes in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 4px, 0);
+  }
+}
+.impact h3 {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--blue-800);
+}
+.impact ul {
+  display: grid;
+  gap: 10px;
+}
+.impact li {
+  display: grid;
+  gap: 3px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-800);
+}
+.who {
+  justify-self: start;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.trust {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-500);
+}
+.source {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-self: start;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-800);
+}
+.source:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  justify-self: start;
+  min-height: 36px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink-900);
+  border-radius: var(--radius-sm);
+}
+.toggle:hover {
+  color: var(--blue-800);
+}
+.toggle svg {
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+/* ------------------------------------------------------------ wide: directly under the 10-stage journey */
+.panel[data-layout="wide"] {
+  margin: 16px 0 8px;
+  padding: 22px 24px 18px;
+  gap: 14px;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--gold-500);
+}
+.panel[data-layout="wide"] > * {
+  grid-column: 1;
+  min-width: 0;
+}
+.panel[data-layout="wide"][data-video="true"] {
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 280px);
+  column-gap: 28px;
+}
+.panel[data-layout="wide"][data-video="true"] .video {
+  grid-column: 2;
+  grid-row: 1 / span 4;
+  margin: 0;
+}
+.panel[data-layout="wide"] .head h2 {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--blue-800);
+}
+.panel[data-layout="wide"] .summary {
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ink-900);
+  max-width: 76ch;
+}
+.panel[data-layout="wide"] .impact {
+  max-width: 76ch;
+}
+.panel[data-layout="wide"] .impact h3 {
+  font-size: 15px;
+}
+.panel[data-layout="wide"] .impact ul {
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 10px 12px;
+  align-items: baseline;
+}
+.panel[data-layout="wide"] .impact li {
+  display: contents;
+  font-size: 15.5px;
+}
+.panel[data-layout="wide"] .who {
+  font-size: 12.5px;
+  padding: 3px 10px;
+}
+.panel[data-layout="wide"] .trust {
+  font-size: 12.5px;
+}
+@media (max-width: 760px) {
+  .panel[data-layout="wide"] {
+    padding: 18px 16px 14px;
+  }
+  .panel[data-layout="wide"][data-video="true"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .panel[data-layout="wide"][data-video="true"] .video {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .panel[data-layout="wide"] .summary {
+    font-size: 16px;
+  }
+  .panel[data-layout="wide"] .impact ul {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+  .panel[data-layout="wide"] .impact li > span:last-child {
+    margin-bottom: 8px;
+  }
+}
+
+.errorBox {
+  display: grid;
+  gap: 8px;
+}
+.errorLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.errorLinks a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  color: var(--blue-800);
+}
+.errorLinks a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ------------------------------------------------------------ "Дэлгэрэнгүй", opened in place */
+.more {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.more > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 2px;
+  cursor: pointer;
+  list-style: none;
+}
+.more > summary::-webkit-details-marker {
+  display: none;
+}
+.moreLabel {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--blue-900);
+}
+.moreHint {
+  font-size: 13px;
+  color: var(--ink-500);
+}
+.more > summary svg {
+  margin-left: auto;
+  color: var(--ink-500);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.more > summary:hover .moreLabel {
+  color: var(--blue-700);
+}
+.more[open] > summary svg {
+  transform: rotate(180deg);
+}
+.whenOpen,
+.more[open] > summary .whenClosed,
+.more[open] > summary .moreHint {
+  display: none;
+}
+.more[open] > summary .whenOpen {
+  display: inline;
+}
+.moreBody {
+  display: grid;
+  gap: 14px;
+  padding: 0 2px 16px;
+}
+.panel[data-layout="wide"] .moreBody .impact {
+  margin-top: 0;
+}

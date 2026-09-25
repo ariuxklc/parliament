@@ -1,29 +1,42 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { answerQuestion } from "@/lib/ai/answer-question";
-import { generateParliamentAnswer, understandQuestion, ChatServiceError } from "@/lib/ai/parliament-chat";
-import { admitChatRequest, allowModelCall, cachedAnswer, storeAnswer } from "@/lib/ai/rate-limit";
+import type { NextRequest } from "next/server";
+import { runAgent } from "@/lib/ai/agent";
+import { callOpenAI, ChatServiceError } from "@/lib/ai/parliament-chat";
+import { admitChatRequest, allowModelCall } from "@/lib/ai/rate-limit";
 import { MAX_BODY_BYTES, MAX_QUESTION_CHARS, parseChatRequest } from "@/lib/ai/validate-request";
-import type { ValidationReport } from "@/lib/ai/validate-answer";
-import { parliamentData } from "@/lib/parliament/data";
-import { SourceError } from "@/lib/http";
+import type { ChatAnswer, ChatEvent } from "@/lib/ai/types";
+import { parliamentData, warmUp } from "@/lib/parliament/data";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const NO_STORE = { "Cache-Control": "no-store" };
-const REQUEST_TIMEOUT_MS = 45_000;
+const REQUEST_TIMEOUT_MS = 90_000;
+const SECRET_ENV = ["OPENAI_API_KEY", "PARLIAMENT_API_USERNAME", "PARLIAMENT_API_PASSWORD", "REVIEW_TOKEN"];
 
 function fail(status: number, error: string) {
-  return NextResponse.json({ error }, { status, headers: NO_STORE });
+  return Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
+}
+
+/** Defence in depth: the model never sees these values, but nothing that equals one may leave the server. */
+function redactSecrets(answer: ChatAnswer): ChatAnswer {
+  const secrets = SECRET_ENV.map((k) => process.env[k]?.trim()).filter((v): v is string => !!v && v.length >= 6);
+  if (!secrets.some((s) => answer.answer.includes(s))) return answer;
+  console.warn("[ask-parliament] redacted a secret from an answer");
+  return { ...answer, answer: secrets.reduce((text, s) => text.split(s).join("[нууцалсан]"), answer.answer) };
+}
+
+/** GET /api/chat — sent when the chat opens, so the most-asked laws start loading before the first question. */
+export function GET() {
+  warmUp();
+  return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 }
 
 /**
  * POST /api/chat — Ask Parliament AI.
- * Body: { question, history?, context?, lastEntities?, selected? } (see lib/ai/validate-request.ts).
- * The OpenAI key and Parliament credentials stay on this server; the response contains only the
- * validated answer and official links from the server's own records.
+ * Body: { question, history?, context? } (lib/ai/validate-request.ts).
+ * Response: NDJSON stream of ChatEvent — {type:"status"} while tools run, then {type:"answer"} or {type:"error"}.
  */
 export async function POST(req: NextRequest) {
+  warmUp(); // loads the most-asked laws in the background, once per server process
   if (!(req.headers.get("content-type") ?? "").includes("application/json")) return fail(415, "JSON хүсэлт шаардлагатай.");
   if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) return fail(413, "Хүсэлтийн хэмжээ хэтэрсэн байна.");
 
@@ -44,52 +57,46 @@ export async function POST(req: NextRequest) {
   const admission = admitChatRequest(ip, client);
   if (!admission.ok) return fail(admission.status, admission.message);
 
-  const started = Date.now();
-  const cacheKey = JSON.stringify([request.question.toLocaleLowerCase("mn"), request.context, request.lastEntities, request.selected]);
-  // The cache outlives hot reloads, so it is off in development to keep code changes visible.
-  const useCache = process.env.NODE_ENV === "production";
-  try {
-    const cached = useCache ? cachedAnswer(cacheKey) : undefined;
-    if (cached) return NextResponse.json(cached, { headers: NO_STORE });
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (event: ChatEvent) => {
+        try {
+          controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+        } catch {
+          /* client went away */
+        }
+      };
+      const started = Date.now();
+      let rounds = 0;
+      try {
+        const answer = await Promise.race([
+          runAgent(request, {
+            data: parliamentData,
+            onStatus: (text) => send({ type: "status", text }),
+            callModel: async (modelReq) => {
+              if (!allowModelCall()) throw new ChatServiceError(503, "Өнөөдрийн AI хариултын хязгаарт хүрлээ. Маргааш дахин оролдоно уу.");
+              rounds++;
+              return callOpenAI(modelReq, `${ip}|${client}`);
+            },
+          }),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new ChatServiceError(504, "Хариулт хэт удаж байна. Асуултаа арай тодорхой болгоод дахин оролдоно уу.")), REQUEST_TIMEOUT_MS)),
+        ]);
+        // Operational log: no question text, no secrets.
+        console.info(`[ask-parliament] rounds=${rounds} tools=${answer.steps.length} citations=${answer.citations.length} unverified=${answer.unverifiedNumbers} ms=${Date.now() - started}`);
+        send({ type: "answer", answer: redactSecrets(answer) });
+      } catch (error) {
+        const message = error instanceof ChatServiceError ? error.message : "AI туслахаас хариулт авах боломжгүй байна. Дахин оролдоно уу.";
+        if (!(error instanceof ChatServiceError)) console.warn("[ask-parliament] failed:", error instanceof Error ? error.message : error);
+        send({ type: "error", error: message });
+      } finally {
+        admission.release();
+        controller.close();
+      }
+    },
+  });
 
-    const report: ValidationReport = { dropped: [] };
-    let modelUsed = false;
-    let understood = false;
-    const answer = await Promise.race([
-      answerQuestion(
-        request,
-        parliamentData,
-        async (input) => {
-          if (!allowModelCall()) throw new ChatServiceError(503, "Өнөөдрийн AI тайлбарын хязгаарт хүрлээ. Маргааш дахин оролдоно уу.");
-          modelUsed = true;
-          return generateParliamentAnswer(input, `${ip}|${client}`);
-        },
-        report,
-        async (input) => {
-          if (!allowModelCall()) return null; // skip understanding rather than fail the request
-          understood = true;
-          return understandQuestion(input, `${ip}|${client}`);
-        },
-      ),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new ChatServiceError(504, "Хариулт хэт удаж байна. Дахин оролдоно уу.")), REQUEST_TIMEOUT_MS)),
-    ]);
-
-    // Operational log: no question text, no secrets.
-    console.info(
-      `[ask-parliament] status=${answer.status} mode=${answer.mode} understand=${understood} model=${modelUsed} help=${!!answer.help} citations=${answer.citations.length} ` +
-        `dropped=${report.dropped.map((d) => d.reason).join(",") || "0"} ms=${Date.now() - started}`,
-    );
-    if (useCache && answer.status !== "clarify") storeAnswer(cacheKey, answer);
-    return NextResponse.json(answer, { headers: NO_STORE });
-  } catch (error) {
-    if (error instanceof ChatServiceError) return fail(error.status, error.message);
-    if (error instanceof SourceError) {
-      console.warn(`[ask-parliament] source unavailable: ${error.message}`);
-      return fail(503, "Албан ёсны эх сурвалж түр боломжгүй байна. Дахин оролдоно уу.");
-    }
-    console.warn("[ask-parliament] failed:", error instanceof Error ? error.message : error);
-    return fail(502, "AI тайлбарыг одоогоор авах боломжгүй байна. Дахин оролдоно уу.");
-  } finally {
-    admission.release();
-  }
+  return new Response(stream, {
+    headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Accel-Buffering": "no" },
+  });
 }

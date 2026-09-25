@@ -1,0 +1,269 @@
+/* AI brief under the Bill Journey. Minimal: the summary reads first; every other part is a quiet row that
+   opens in place. A thin gold rule marks it as the explanation layer, not the official record. */
+.brief {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  margin: 16px 0 8px;
+  padding: 22px 26px 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow-wrap: anywhere;
+}
+.brief::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 22px;
+  width: 3px;
+  height: 40px;
+  border-radius: 0 3px 3px 0;
+  background: var(--gold-500);
+}
+.brief > *,
+.rowBody > * {
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+.title {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--blue-900);
+}
+.badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+  background: #fff4cc;
+  color: var(--gold-800);
+}
+.outdated {
+  font-size: 13px;
+  color: #7a3b00;
+  background: #fff4e5;
+  border: 1px solid #f5d7a8;
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+}
+
+/* the part everyone reads */
+.lead p {
+  max-width: 68ch;
+  font-size: clamp(16.5px, 1.45vw, 18px);
+  line-height: 1.65;
+  color: var(--ink-900);
+}
+
+/* ------------------------------------------------------------ rows that open in place */
+.rows {
+  display: grid;
+  margin-top: 4px;
+}
+.row {
+  border-top: 1px solid var(--line);
+}
+.row > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px;
+  padding: 12px 2px;
+  cursor: pointer;
+  list-style: none;
+}
+.row > summary::-webkit-details-marker {
+  display: none;
+}
+.rowLabel {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--blue-900);
+}
+.rowCount {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-500);
+  background: var(--surface-2);
+  border-radius: var(--radius-pill);
+  padding: 1px 8px;
+}
+.row > summary svg {
+  margin-left: auto;
+  color: var(--ink-500);
+  transition: transform var(--dur-2) var(--ease-out);
+}
+.row > summary:hover .rowLabel {
+  color: var(--blue-700);
+}
+.row > summary:hover svg {
+  color: var(--blue-800);
+}
+.row[open] > summary svg {
+  transform: rotate(180deg);
+}
+.rowBody {
+  display: grid;
+  gap: 12px;
+  padding: 0 2px 18px;
+}
+
+.para,
+.list li,
+.affected li {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-800);
+}
+.list {
+  display: grid;
+  gap: 8px;
+  max-width: 76ch;
+}
+.list li {
+  position: relative;
+  padding-left: 18px;
+}
+.list li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.64em;
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--blue-800);
+}
+.affected {
+  display: grid;
+  gap: 10px;
+}
+.affected li {
+  display: grid;
+  gap: 1px;
+}
+.who {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--blue-800);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* small numbered source markers after each statement — quiet until hovered */
+.marks {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 4px;
+  vertical-align: 1px;
+}
+.mark {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--blue-50);
+  color: var(--blue-700);
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1;
+  transition:
+    background var(--dur-1) var(--ease-out),
+    color var(--dur-1) var(--ease-out);
+}
+.mark:hover,
+.mark:focus-visible {
+  background: var(--blue-800);
+  color: #fff;
+}
+
+.muted {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-500);
+}
+
+.sourceList {
+  display: grid;
+  gap: 6px;
+}
+.sourceList li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  font-size: 14px;
+}
+.sourceList b {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--blue-50);
+  color: var(--blue-800);
+  font-size: 11px;
+}
+.sourceList a {
+  color: var(--blue-800);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--blue-200);
+  text-underline-offset: 3px;
+}
+.sourceList a:hover {
+  text-decoration-color: var(--blue-800);
+}
+.filename {
+  font-size: 12px;
+  color: var(--ink-500);
+}
+
+.excerpts summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-800);
+  width: fit-content;
+}
+.excerpts ol {
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+}
+.excerptMeta {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-600);
+}
+.excerptMeta b {
+  color: var(--blue-800);
+}
+.excerptText {
+  margin: 4px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--blue-100);
+  background: var(--surface-2);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-700);
+  white-space: pre-line;
+}
+
+@media (max-width: 860px) {
+  .brief {
+    padding: 18px 18px 4px;
+  }
+}

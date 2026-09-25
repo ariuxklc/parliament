@@ -1,32 +1,26 @@
 import "server-only";
-import { listJson, readJson, updateJson } from "../store/jsonStore";
+import { readJson, updateJson } from "../store/jsonStore";
 import type { BillExplainer } from "./types";
+import { findVideo } from "./video";
 
 const file = (billId: number) => `summaries/${billId}.json`;
 
+/** The bill featured on the homepage "30 секундын AI тайлбар" block — change this id to feature another bill. */
+export const FEATURED_BILL_ID = 11151;
+
+/** Cached explainer (any status) with its video attached; null if none has been generated yet. */
 export async function getExplainer(billId: number): Promise<BillExplainer | null> {
   if (!Number.isInteger(billId) || billId <= 0) return null;
-  return readJson<BillExplainer | null>(file(billId), null);
+  const e = await readJson<(BillExplainer & { status: string }) | null>(file(billId), null);
+  if (!e || !e.summary?.length) return null;
+  return { ...e, status: e.status === "approved" ? "approved" : "ai", video: await findVideo(billId) };
 }
 
-/** Public accessor: returns the explainer only once a person has approved it. */
-export async function getApprovedExplainer(billId: number): Promise<BillExplainer | null> {
-  const e = await getExplainer(billId);
-  return e && e.status === "approved" && e.summary.length ? e : null;
+/** Homepage block: the featured bill's cached explainer (never generates on homepage load). */
+export function getFeaturedExplainer(): Promise<BillExplainer | null> {
+  return getExplainer(FEATURED_BILL_ID);
 }
 
-export async function listExplainers(): Promise<BillExplainer[]> {
-  const files = await listJson("summaries");
-  const all = await Promise.all(files.map((f) => readJson<BillExplainer | null>(`summaries/${f}`, null)));
-  return all.filter((e): e is BillExplainer => e !== null).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-}
-
-/** Most recently approved explainer — used for the homepage "30 секундэд" block. */
-export async function getFeaturedExplainer(): Promise<BillExplainer | null> {
-  const approved = (await listExplainers()).filter((e) => e.status === "approved" && e.summary.length);
-  return approved.sort((a, b) => (b.approvedAt ?? "").localeCompare(a.approvedAt ?? ""))[0] ?? null;
-}
-
-export function saveExplainer(billId: number, fn: (current: BillExplainer | null) => BillExplainer): Promise<BillExplainer | null> {
-  return updateJson<BillExplainer | null>(file(billId), null, (cur) => ({ ...fn(cur), updatedAt: new Date().toISOString() }));
+export function saveExplainer(billId: number, value: BillExplainer): Promise<BillExplainer | null> {
+  return updateJson<BillExplainer | null>(file(billId), null, () => ({ ...value, video: null, updatedAt: new Date().toISOString() }));
 }

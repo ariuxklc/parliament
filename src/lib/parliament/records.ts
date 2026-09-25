@@ -6,6 +6,51 @@
  * the official URL it came from — URLs are built by the server, never by the model.
  */
 import type { LawForumDocument } from "./lawforum-page.ts";
+import type { LawDocument, LawSearchHit } from "./legalinfo.ts";
+import type { PassedAct } from "./register.ts";
+
+export type { LawDocument, LawSearchHit, PassedAct };
+
+/** A plenary meeting (new.parliament.mn). `date` is Ulaanbaatar local. */
+export interface MeetingRef {
+  id: number;
+  title: string;
+  date: string;
+  url: string;
+}
+
+export interface MeetingDetail extends MeetingRef {
+  description: string | null;
+  location: string | null;
+  agenda: { title: string; polls: number }[];
+  protocolCount: number | null;
+}
+
+export interface TranscriptEntry {
+  order: number;
+  speaker: string | null;
+  party: string | null;
+  text: string;
+}
+
+export interface SiteSearchHit {
+  type: string;
+  title: string;
+  description: string | null;
+  date: string | null;
+  url: string;
+}
+
+export interface LawSearchQuery {
+  query: string;
+  /** title = act titles only; text = full text with snippets. */
+  mode: "title" | "text";
+  adoptedFrom?: string;
+  adoptedTo?: string;
+  inForceOnly?: boolean;
+  /** legalinfo category id: 27 law, 28 Parliament resolution, 26 Constitution, 33 Government resolution, 29 treaty. */
+  category?: string;
+}
 
 /** LawForum project (API list item + the listing section it appears in on lawforum.parliament.mn). */
 export interface BillRecord {
@@ -111,11 +156,20 @@ export interface ParliamentData {
   /** Parsed public LawForum page for one bill; null when it has no parsable text. */
   billDocument(bill: BillRecord): Promise<LawForumDocument | null>;
   bulletin(): Promise<BulletinBill[]>;
-  searchPolls(query: { search: string; from?: string; to?: string; limit: number }): Promise<PollRecord[]>;
+  searchPolls(query: { search: string; from?: string; to?: string; limit: number; meetingId?: number }): Promise<PollRecord[]>;
   poll(id: number): Promise<PollRecord | null>;
   members(): Promise<MemberRecord[]>;
   memberDetail(id: number): Promise<MemberDetail | null>;
   schedule(): Promise<ScheduleRecord | null>;
   sessions(): Promise<SessionRecord[]>;
   today(): string; // YYYY-MM-DD, Ulaanbaatar
+
+  /* Added for the Ask Parliament AI assistant (legalinfo.mn, parliament.mn register, meetings). */
+  lawSearch(query: LawSearchQuery): Promise<LawSearchHit[]>;
+  lawDocument(lawId: string): Promise<LawDocument | null>;
+  passedActs(query: { keywords?: string; type?: "law" | "resolution" | "any"; sort?: "newest" | "oldest"; page?: number }): Promise<{ total: number | null; items: PassedAct[] }>;
+  meetingsIndex(): Promise<MeetingRef[]>;
+  meeting(id: number): Promise<MeetingDetail | null>;
+  transcript(id: number): Promise<TranscriptEntry[]>;
+  siteSearch(query: string): Promise<SiteSearchHit[]>;
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useMemo, useState } from "react";
 import styles from "./stats.module.css";
 import type { ParliamentComposition } from "@/lib/types";
@@ -90,12 +89,9 @@ export function Hemicycle({ composition }: { composition: ParliamentComposition 
               onClick={() => setFocus(focus === i ? null : i)}
               style={{ ["--party" as string]: p.party.color }}
             >
-              {p.party.logo ? <Image src={p.party.logo} alt="" width={22} height={22} className={styles.legendLogo} /> : <span className={styles.legendSwatch} />}
+              <span className={styles.legendSwatch} />
               <span className={styles.legendName}>{p.party.name}</span>
               <span className={`tabular ${styles.legendSeats}`}>{p.seats}</span>
-              <span className={styles.legendBar} aria-hidden="true">
-                <span style={{ width: `${(p.seats / totalMembers) * 100}%` }} />
-              </span>
             </button>
           </li>
         ))}

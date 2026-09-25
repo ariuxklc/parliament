@@ -398,6 +398,118 @@
   overflow-wrap: anywhere;
 }
 
+/* ------------------------------------------- readability for every age group */
+.answerBody {
+  font-size: 16.5px;
+  line-height: 1.7;
+}
+.question {
+  font-size: 16px;
+}
+.form textarea {
+  font-size: 16px; /* also stops iOS zooming into the field */
+}
+
+/* one-tap follow-ups under the latest answer */
+.followUps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 94%;
+}
+.followUps button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--blue-200);
+  background: var(--surface);
+  color: var(--blue-800);
+  font-size: 14.5px;
+  font-weight: 600;
+  text-align: left;
+}
+.followUps button:hover {
+  background: var(--blue-50);
+  border-color: var(--blue-600);
+}
+
+.copy {
+  margin-left: auto;
+  color: var(--ink-600);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.lookups + .copy {
+  margin-left: 12px;
+}
+.copy:hover {
+  color: var(--blue-800);
+}
+.slowNote {
+  margin-top: 6px;
+  color: var(--ink-500);
+  font-size: 13px;
+}
+
+/* --------------------------------------------------- rich answer (assistant) */
+.answerBody ul.richList,
+.answerBody ol.richList {
+  margin: 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 4px;
+}
+.answerBody ul.richList {
+  list-style: disc;
+}
+.answerBody ol.richList {
+  list-style: decimal;
+}
+.answerBody strong {
+  color: var(--blue-900);
+}
+.subhead {
+  color: var(--blue-900);
+  font-weight: 800;
+  margin-top: 4px;
+}
+.lookups {
+  margin-left: auto;
+  color: var(--ink-500);
+  font-size: 12px;
+}
+.lookups summary {
+  cursor: pointer;
+  list-style: none;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.lookups summary::-webkit-details-marker {
+  display: none;
+}
+.lookups ul {
+  margin: 6px 0 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 2px;
+  color: var(--ink-600);
+}
+.statusTrail {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+  display: grid;
+  gap: 2px;
+  color: var(--ink-500);
+  font-size: 12px;
+}
+.statusTrail li::before {
+  content: "✓ ";
+  color: var(--blue-700);
+}
+
 /* ------------------------------------------------------------ status/form */
 .loading {
   display: flex;

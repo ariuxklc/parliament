@@ -1,7 +1,7 @@
 /**
- * Plain-language bill explainers ("30 секундэд" + "Энэ танд хамаатай юу?").
- * Drafted by the AI model from the official LawForum text, then edited/approved by a person.
- * Only `status: "approved"` documents are ever shown publicly.
+ * Plain-language bill explainers ("30 секундын AI тайлбар": summary + "Энэ танд хамаатай юу?").
+ * Generated automatically by the AI model from the official LawForum text the first time a bill page is
+ * opened, then cached. Shown with an "AI · хүн хянаагүй" label; every statement links to its clause.
  */
 
 export interface SourcePassage {
@@ -22,7 +22,7 @@ export interface ImpactPoint extends SummaryPoint {
 }
 
 export interface BillVideo {
-  src: string; // "/api/videos/<file>" (uploaded) or an https YouTube/other link
+  src: string; // "/videos/<billId>.mp4" (file in public/videos) or an https YouTube/other link
   kind: "file" | "youtube" | "link";
   title: string | null;
 }
@@ -31,15 +31,15 @@ export interface BillExplainer {
   billId: number;
   billTitle: string;
   billUrl: string;
-  status: "draft" | "approved";
+  /** "ai" = generated automatically, not checked by a person. "approved" = a person checked it (optional). */
+  status: "ai" | "approved";
   summary: SummaryPoint[];
   impact: ImpactPoint[];
   sources: SourcePassage[];
+  /** Resolved at read time from public/videos or data/videos.json — not stored with the summary. */
   video: BillVideo | null;
   generatedAt: string | null;
   model: string | null;
-  editedByReviewer: boolean;
-  reviewedBy: string | null; // kept for the audit trail, not shown publicly
   approvedAt: string | null;
   updatedAt: string;
 }

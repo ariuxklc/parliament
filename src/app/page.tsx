@@ -9,12 +9,10 @@ import { MembersBlock } from "@/components/home/members/MembersBlock";
 import { StatsSection } from "@/components/home/stats/StatsSection";
 import { NewsSection } from "@/components/home/news/NewsSection";
 import { SectionSkeleton } from "@/components/ui/SectionSkeleton";
-import { FeaturedExplainer } from "@/components/home/featured/FeaturedExplainer";
 import { PetitionsSection } from "@/components/home/petitions/PetitionsSection";
 import { CommitteesSection } from "@/components/home/committees/CommitteesSection";
 import {
   getAttendanceStat,
-  getBillBulletin,
   getCommittees,
   getComposition,
   getPetitions,
@@ -23,11 +21,12 @@ import {
   getMemberRoster,
   getNavigation,
   getNews,
-  getOpenForComment,
   getProposals,
   getSessions,
   getWeeklySchedule,
 } from "@/lib/data";
+import { getReels } from "@/lib/reels";
+import { getProjectsOverview } from "@/lib/projects/catalog";
 import { load } from "@/lib/http";
 import { parseProposalQuery } from "@/lib/normalize/proposals";
 import { formatDate, formatTime, todayLocal } from "@/lib/format";
@@ -46,8 +45,8 @@ const SECTIONS = [
 ];
 
 async function LegislationLoader({ query, defaultYear }: { query: ProposalQuery; defaultYear: number }) {
-  const initial = await load("proposals", () => getProposals(query));
-  return <LegislationSection initial={initial} defaultYear={defaultYear} />;
+  const [initial, projects] = await Promise.all([load("proposals", () => getProposals(query)), getProjectsOverview(3).catch(() => null)]);
+  return <LegislationSection initial={initial} defaultYear={defaultYear} projects={projects} />;
 }
 
 async function MembersLoader() {
@@ -77,13 +76,12 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
   const query = parseProposalQuery(sp, { year: defaultYear });
 
   const sessions = await getSessions();
-  const [nav, current, openDrafts, bulletin, schedule, votes] = await Promise.all([
+  const [nav, current, schedule, votes, reels] = await Promise.all([
     getNavigation(),
     getCurrentActivity(sessions),
-    getOpenForComment(),
-    getBillBulletin(),
     getWeeklySchedule(),
-    getLatestVotes(5),
+    getLatestVotes(3),
+    getReels().catch(() => []),
   ]);
   const now = new Date();
 
@@ -92,9 +90,8 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
       <SiteHeader nav={nav} />
       <SectionNav links={SECTIONS} />
       <main id="main">
-        <Hero current={current} openDrafts={openDrafts} bulletin={bulletin} today={today} />
-        <FeaturedExplainer />
-        <ActivitySection schedule={schedule} votes={votes} bulletin={bulletin} />
+        <Hero current={current} reels={reels} today={today} />
+        <ActivitySection schedule={schedule} votes={votes} />
         <Suspense fallback={<SectionSkeleton id="huuli" tone="light" height={1100} />}>
           <LegislationLoader query={query} defaultYear={defaultYear} />
         </Suspense>
