@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test:chat": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/ask-parliament.test.mjs",
     "projects:process": "node --env-file-if-exists=.env.local --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/process-projects.ts",
+    "youth:seed": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/youth-seed.ts",
     "test:projects": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --experimental-strip-types --test tests/projects.test.mjs"
   },
   "dependencies": {

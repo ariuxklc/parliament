@@ -7,7 +7,7 @@
   overflow: hidden;
   overflow: clip;
   padding: var(--section-y) 0;
-  background: var(--canvas);
+  background: var(--surface);
   color: var(--ink-900);
 }
 

@@ -15,8 +15,11 @@ const FALLBACK_NAV: NavItem[] = [
   { label: "УИХ-ын гишүүд", href: officialUrl.memberList(), external: true, children: [] },
 ];
 
+/** Our own section, after the official menu: youth opportunities with MP offices. */
+const YOUTH_NAV: NavItem = { label: "Залуучуудын дадлага", href: "/dadlaga", external: false, children: [] };
+
 export function SiteHeader({ nav }: { nav: NavItem[] }) {
-  const items = nav.length ? nav : FALLBACK_NAV;
+  const items = [...(nav.length ? nav : FALLBACK_NAV), YOUTH_NAV];
   return (
     <header className={styles.header}>
       <div className={`container ${styles.headerInner}`}>

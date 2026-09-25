@@ -71,7 +71,7 @@ export function HeaderNav({ items }: { items: NavItem[] }) {
                     <ChevronDown size={14} />
                   </button>
                 ) : (
-                  <a className={styles.navTrigger} href={item.href} target="_blank" rel="noopener noreferrer">
+                  <a className={styles.navTrigger} href={item.href} data-local={!item.external || undefined} {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
                     <span className={styles.navLabel}>{item.label}</span>
                   </a>
                 )}
@@ -127,7 +127,7 @@ export function HeaderNav({ items }: { items: NavItem[] }) {
                     </ul>
                   </details>
                 ) : (
-                  <a className={styles.drawerTop} href={item.href} target="_blank" rel="noopener noreferrer" tabIndex={drawer ? 0 : -1}>
+                  <a className={styles.drawerTop} href={item.href} {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})} tabIndex={drawer ? 0 : -1}>
                     {item.label}
                   </a>
                 )}

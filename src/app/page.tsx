@@ -11,6 +11,7 @@ import { NewsSection } from "@/components/home/news/NewsSection";
 import { SectionSkeleton } from "@/components/ui/SectionSkeleton";
 import { PetitionsSection } from "@/components/home/petitions/PetitionsSection";
 import { CommitteesSection } from "@/components/home/committees/CommitteesSection";
+import { YouthHomeBlock } from "@/components/youth/YouthHomeBlock";
 import {
   getAttendanceStat,
   getCommittees,
@@ -39,6 +40,7 @@ const SECTIONS = [
   { id: "odoo", label: t.sections.now },
   { id: "huuli", label: t.sections.laws },
   { id: "orgodol", label: t.sections.petitions },
+  { id: "dadlaga", label: "Дадлага" },
   { id: "gishuud", label: t.sections.members },
   { id: "too", label: t.sections.stats },
   { id: "medee", label: t.sections.news },
@@ -98,6 +100,7 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
         <Suspense fallback={null}>
           <PetitionsLoader />
         </Suspense>
+        <YouthHomeBlock />
         <Suspense fallback={<SectionSkeleton id="gishuud" tone="dark" height={1200} />}>
           <MembersLoader />
         </Suspense>

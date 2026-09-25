@@ -31,7 +31,7 @@ Run locally: `npm install && npm run dev` → http://localhost:3000 (needs `.env
 
 ## 2. Homepage structure (minimal redesign, 2026-09-25)
 
-`Header (official menu) → Sticky section nav → Hero (session in one line + reels) → Хуралдааны тов (the week: date + what meets; 3 latest votes) → Хуулийн төслүүд (years, sessions, list; entry to /projects) → Нийтийн өргөдөл → Гишүүд → Байнгын хороод → Их Хурал тоогоор → Мэдээ → Footer`
+`Header (official menu) → Sticky section nav → Hero (session in one line + reels) → Хуралдааны тов (the week: date + what meets; 3 latest votes) → Хуулийн төслүүд (years, sessions, list; entry to /projects) → Нийтийн өргөдөл → Залуучуудын дадлага → Гишүүд → Байнгын хороод → Их Хурал тоогоор → Мэдээ → Footer`
 
 Why (feedback from Ariuka's reviewers): too much text and too many boxes for an average visitor. Each section now shows one idea at a glance; detail is one click away (a day in the schedule opens its meetings; a bill opens its page).
 
@@ -51,6 +51,15 @@ Removed from the homepage: the three hero tiles (replaced by the reels; the late
 `src/components/assistant/ChatDock.tsx` (+ `Mascot.tsx`, `chatDock.module.css`), mounted in `src/app/layout.tsx`, replaces the old floating launcher. A messenger-style panel for Ask Parliament AI: mascot launcher with a one-time hello, blue header with the mascot's live face, bot/user bubbles, quick-reply chips (starters, then follow-ups), typing dots with the current lookup, answers with numbered citations, a folded source list and "Хуулбарлах". Same `/api/chat` protocol and the same sessionStorage conversation as the full chat on `/ask`. Hidden on `/ask` and `/laws/*`, which embed the chat. Full screen on phones.
 
 Mascot sprites: `public/images/mascot/horse-bust.webp` (launcher) and `horse-head.webp` (avatars), both 4 × 6 frames cut from Ariuka's sheet (256 px cells; bust = cell crop x16 y4 240², head = x92 y6 160²). Moods (frame numbers in `Mascot.tsx`): idle 0 with a blink (2) every few seconds, listening 5 while typing, looking up 8/9/13/10 while the answer is prepared, laugh 14 when it arrives, worried 21 on errors, greeting 17 on hover.
+
+### Залуучуудын дадлага (/dadlaga)
+
+Ported on 2026-09-26 from `origin/feature/youth-dadlaga` (commits e4a8ea2, 0a01d0c) — only this feature, not the staff area or the other commits on that branch. High-school students browse listings from MP offices (shadow a day, short internship, research, volunteering, events), tick the time slots they can make and apply with parent contact + consent; they get a tracking code for `/dadlaga/status` (code + phone), where they can also withdraw. Each MP office has its own login (`/dadlaga/admin`) to manage listings and applications; the Secretariat signs in on the same page with `STAFF_PASSCODE` (off when unset) and sees everything.
+
+- Homepage: `YouthHomeBlock` (`#dadlaga`, after petitions) — the four steps, "Бүх зар" and "Бүртгэлээ шалгах", and the three listings closing soonest as hairline rows. Header menu: "Залуучуудын дадлага" with a small gold dot (our own section, after the official menu).
+- Restyled to the site's minimal style (`youth.module.css`, `forms.module.css`); the shared pieces it borrowed from the other branch are local now (`youth/Panel.tsx`, `youth/submit.ts`, `lib/staff-auth.ts`).
+- Storage: `data/store/` (gitignored — applications hold minors' personal data, office logins and the session key). Demo: `npm run youth:seed` adds a fictional office and five listings marked "Жишээ зар"; the office login is printed once when it is created.
+- Env names (optional): `YOUTH_SESSION_SECRET`, `STAFF_PASSCODE`.
 
 ### Readable titles
 

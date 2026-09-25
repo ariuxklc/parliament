@@ -412,3 +412,14 @@
   gap: 12px;
   font-size: 12.5px;
 }
+
+/* our own section (youth opportunities): marked with a small gold dot, not a new colour block */
+.navTrigger[data-local="true"]::before {
+  content: "";
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--gold-500);
+}

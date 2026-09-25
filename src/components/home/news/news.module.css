@@ -1,6 +1,6 @@
 .section {
   padding: var(--section-y) 0;
-  background: var(--surface);
+  background: var(--canvas);
 }
 
 .top {

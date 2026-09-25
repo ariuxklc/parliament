@@ -27,3 +27,5 @@ Thumbs.db
 
 # submitted-projects: extracted text of official files (re-creatable)
 /data/cache/
+# youth opportunities (/dadlaga): applications hold minors' personal data, office logins and the session key
+/data/store/

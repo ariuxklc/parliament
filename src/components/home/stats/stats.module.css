@@ -1,6 +1,6 @@
 .section {
   padding: var(--section-y) 0;
-  background: var(--canvas);
+  background: var(--surface);
 }
 
 .grid {
@@ -154,7 +154,7 @@
 }
 .legend button:hover,
 .legend button[aria-pressed="true"] {
-  background: var(--surface);
+  background: var(--surface-2);
 }
 .legendSwatch {
   width: 10px;
