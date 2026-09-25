@@ -1,0 +1,21 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# secrets — never commit real credentials
+.env
+.env*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+~$*
+
+# source materials from organizers/team (large binaries, keep out of the repo)
+*.pptx
+*.docx

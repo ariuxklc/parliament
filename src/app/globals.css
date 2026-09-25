@@ -1,0 +1,234 @@
+/*
+ * Design tokens — derived from new.parliament.mn:
+ *   primary blue #00379B, accent gold #FFC700, page canvas #ECEDEF, ink #1A1A1A,
+ *   uppercase blue section titles with a gold ornament rule, red–blue–red flag stripe.
+ */
+:root {
+  --blue-950: #061a4a;
+  --blue-900: #0a2466;
+  --blue-800: #00379b;
+  --blue-700: #0b46b5;
+  --blue-600: #2359c8;
+  --blue-200: #bccbeb;
+  --blue-100: #dce5f7;
+  --blue-50: #eef2fb;
+
+  --gold-300: #ffe07a;
+  --gold-500: #ffc700;
+  --gold-600: #e0ad00;
+  --gold-800: #7a5a00;
+
+  --red-600: #c8102e;
+  --flag-blue: #0f4fa8;
+
+  --ink-900: #1a1a1a;
+  --ink-800: #262c38;
+  --ink-700: #3a4150;
+  --ink-600: #4d5463;
+  --ink-500: #5d6474;
+  --ink-on-dark: #e8edf8;
+  --ink-on-dark-muted: #aab6d3;
+
+  --canvas: #ecedef;
+  --surface: #ffffff;
+  --surface-2: #f5f6f8;
+  --line: #d9dde4;
+  --line-strong: #c4cad4;
+  --line-on-dark: rgba(255, 255, 255, 0.14);
+
+  --font-sans: var(--font-golos), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  --shadow-1: 0 1px 2px rgba(10, 36, 102, 0.06), 0 1px 1px rgba(10, 36, 102, 0.04);
+  --shadow-2: 0 12px 28px -14px rgba(10, 36, 102, 0.3), 0 2px 6px rgba(10, 36, 102, 0.08);
+  --shadow-3: 0 28px 56px -24px rgba(6, 26, 74, 0.55), 0 6px 16px rgba(6, 26, 74, 0.16);
+
+  --ease-out: cubic-bezier(0.22, 0.8, 0.24, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-1: 150ms;
+  --dur-2: 260ms;
+  --dur-3: 440ms;
+  --dur-4: 720ms;
+
+  --container: 1320px;
+  --gutter: clamp(16px, 3.2vw, 40px);
+  --section-y: clamp(64px, 8vw, 112px);
+  --nav-h: 56px;
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--nav-h) + 16px);
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink-900);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  font-feature-settings: "tnum" 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+ul,
+ol,
+dl,
+dd,
+figure {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+:focus-visible {
+  outline: 3px solid var(--gold-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--gold-300);
+  color: var(--ink-900);
+}
+
+.container {
+  width: 100%;
+  max-width: calc(var(--container) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -64px;
+  z-index: 100;
+  background: var(--gold-500);
+  color: var(--ink-900);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  transition: top var(--dur-2) var(--ease-out);
+}
+.skip-link:focus {
+  top: 12px;
+}
+
+/* Flag stripe used under the header, as on the official site */
+.flag-stripe {
+  height: 4px;
+  background: linear-gradient(90deg, var(--red-600) 0 33.33%, var(--flag-blue) 33.33% 66.66%, var(--red-600) 66.66% 100%);
+}
+
+/* ---------------------------------------------------------------- motion
+ * Content is only hidden for reveal when JS is running (`.js` is set in <head>),
+ * so nothing important is ever locked behind an animation.
+ */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition:
+    opacity var(--dur-4) var(--ease-out),
+    transform var(--dur-4) var(--ease-out);
+  transition-delay: calc(var(--reveal-i, 0) * 70ms);
+}
+.js [data-reveal][data-revealed="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+[data-parallax] {
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+  .js [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+  [data-parallax] {
+    transform: none !important;
+    will-change: auto;
+  }
+}

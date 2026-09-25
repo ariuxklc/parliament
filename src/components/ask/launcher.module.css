@@ -1,0 +1,156 @@
+.fab {
+  position: fixed;
+  right: clamp(16px, 3vw, 28px);
+  bottom: clamp(16px, 3vw, 28px);
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px 10px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--blue-800);
+  color: white;
+  box-shadow: var(--shadow-3);
+  border: 2px solid var(--gold-500);
+  text-align: left;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.fab:hover {
+  background: var(--blue-900);
+  transform: translateY(-1px);
+}
+.fab:focus-visible {
+  outline: 3px solid var(--gold-300);
+  outline-offset: 3px;
+}
+.fab strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.1;
+}
+.fab small {
+  display: block;
+  color: var(--gold-300);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.fabMark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--gold-500);
+  color: var(--blue-900);
+  font-weight: 900;
+  font-size: 17px;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+}
+.overlay[data-open="true"] {
+  pointer-events: auto;
+}
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 26, 74, 0.45);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.overlay[data-open="true"] .scrim {
+  opacity: 1;
+}
+.panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(480px, 100vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  box-shadow: var(--shadow-3);
+  transform: translateX(100%);
+  transition: transform 0.24s ease;
+}
+.overlay[data-open="true"] .panel {
+  transform: none;
+}
+.panelHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px;
+  background: var(--blue-900);
+  color: white;
+  border-bottom: 4px solid var(--gold-500);
+}
+.panelEyebrow {
+  color: var(--gold-300);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.panelHead h2 {
+  font-size: 17px;
+  line-height: 1.25;
+  margin-top: 4px;
+}
+.panelActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+.close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: white;
+  background: rgba(255, 255, 255, 0.12);
+}
+.close:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+.panelBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.panelBody > * {
+  flex: 1;
+}
+
+@media (max-width: 520px) {
+  .fab small {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .scrim,
+  .fab {
+    transition: none;
+  }
+}
