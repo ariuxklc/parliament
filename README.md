@@ -2,6 +2,8 @@
 
 A Mongolian-language Parliament information prototype built for the Open Parliament Hackathon. It brings together official activity, draft legislation, submitted projects, member information, and youth opportunities. Ask Parliament AI answers questions using read-only lookups of official sources and attaches source links. This is a prototype, not an official Parliament service.
 
+**Status:** This hackathon prototype is not actively maintained. Its external data sources and API access may change, so some features may stop working. It is not intended for production use.
+
 ## Run locally
 
 Use Node.js 22 or newer (the project scripts use Node's TypeScript stripping) and npm.
@@ -14,7 +16,7 @@ npm run dev
 
 Open <http://localhost:3000>. On PowerShell, use `Copy-Item .env.example .env.local` instead of `cp` if needed. The public data sources have defaults, so you can start the site without filling in every variable. Some sections require access to the external official services and will show an unavailable state if those services cannot be reached.
 
-Set `OPENAI_API_KEY` in `.env.local` to enable Ask Parliament AI and generation of new bill or project summaries. The optional authenticated Parliament API settings enable its agenda data. Keep `.env.local` private; it is gitignored.
+Set `OPENAI_API_KEY` in `.env.local` to enable Ask Parliament AI and generation of new bill or project summaries. The authenticated Parliament API is optional and supplies agenda data only. Leave its credentials unset unless you have authorized access and an approved HTTPS endpoint: the URL in `.env.example` uses plain HTTP, which would send the login credentials without transport encryption. Keep `.env.local` private; it is gitignored.
 
 ## What is in the app
 
@@ -40,7 +42,7 @@ Copy [`.env.example`](.env.example) for the full set of variables. The key setti
 | `OPENAI_API_KEY` | Enables chat and new AI summaries. |
 | `OPENAI_MODEL` | Model used for chat and summaries; defaults to `gpt-6-luna` in code. |
 | `OPENAI_REASONING_EFFORT` | Optional chat reasoning effort; defaults to `medium`. |
-| `PARLIAMENT_API_BASE_URL`, `PARLIAMENT_API_USERNAME`, `PARLIAMENT_API_PASSWORD` | Optional authenticated Parliament API access for agenda data. All three are required together. |
+| `PARLIAMENT_API_BASE_URL`, `PARLIAMENT_API_USERNAME`, `PARLIAMENT_API_PASSWORD` | Optional authenticated Parliament API access for agenda data. All three are required together; use only with authorized access and an approved HTTPS endpoint. |
 | `LAWFORUM_API_BASE_URL` | Public LawForum API; has a default URL. |
 | `NEXT_PUBLIC_PARLIAMENT_SITE_URL`, `NEXT_PUBLIC_LAWFORUM_SITE_URL` | Official site origins used for public data and links. |
 | `YOUTH_SESSION_SECRET` | Optional signing secret for office sessions. Without it, a key is generated in `data/store/`. |
@@ -89,3 +91,5 @@ For a local youth demo, `npm run youth:seed` creates a fictional office and five
 - [Ask Parliament demo questions](docs/ask-parliament-demo-qa.md)
 
 These notes include historical decisions; the source code is authoritative when behavior has changed.
+
+Local `output/`, `outputs/`, and `tmp/` folders contain generated work and are not part of the tracked source. Review their contents before adding files to Git.
